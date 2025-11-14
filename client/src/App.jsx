@@ -1,12 +1,28 @@
-import './App.css'
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import Home from "./Components/Home.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
+import Dashboard from "./Components/Dashboard.jsx";
+import ProtectedRoute from "./Components/ProtectedRoute.jsx";
+import Login from "./Components/Auth/Login.jsx";
 
-function App() {
-
+const App = () => {
   return (
-    <div>
-      <h1>Code Editor</h1>
-    </div>
-  )
-}
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </AuthProvider>
+  );
+};
 
-export default App
+export default App;
