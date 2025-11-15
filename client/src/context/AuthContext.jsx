@@ -15,18 +15,9 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock user data for demo
-  const mockUser = {
-    _id: '1',
-    firstName: 'Admin',
-    lastName: 'User',
-    email: import.meta.env.VITE_LOGIN_EMAIL,
-    name: 'Admin User'
-  };
+  const API_URL = 'http://localhost:5000/api';
 
-  // Mock token (just for localStorage consistency)
-  const mockToken = 'mock_jwt_token_12345';
-
+  // Check if user is logged in on component mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -38,56 +29,63 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  // Login function
+  const login = async (email, password) => {  
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Mock validation - accept only demo credentials
-      if (email === import.meta.env.VITE_LOGIN_EMAIL && password === import.meta.env.VITE_LOGIN_PASSWORD) {
-        localStorage.setItem('token', mockToken);
-        localStorage.setItem('user', JSON.stringify(mockUser));
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data));
         setIsAuthenticated(true);
-        setUser(mockUser);
+        setUser(data.data);
         return { success: true };
       } else {
-        return { 
-          success: false, 
-          error: 'Invalid email or password.' 
-        };
+        return { success: false, error: data.message };
       }
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: 'Something went wrong. Please try again.' };
+      return { success: false, error: 'Network error. Please try again.' };
     }
   };
 
+  // Register function
   const register = async (firstName, lastName, email, password) => {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ firstName, lastName, email, password }),
+      });
 
-      // Mock registration - always succeed for demo
-      const newUser = {
-        _id: Date.now().toString(),
-        firstName,
-        lastName,
-        email,
-        name: `${firstName} ${lastName}`
-      };
+      const data = await response.json();
 
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setIsAuthenticated(true);
-      setUser(newUser);
-      
-      return { success: true };
+      if (data.success) {
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data));
+        setIsAuthenticated(true);
+        setUser(data.data);
+        return { success: true };
+      } else {
+        return { success: false, error: data.message };
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      return { success: false, error: 'Registration failed. Please try again.' };
+      return { success: false, error: 'Network error. Please try again.' };
     }
   };
 
+  // Logout function
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -95,24 +93,67 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Get current user profile
   const getCurrentUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
-      
-      if (!token || !savedUser) {
-        return { success: false, error: 'No user data found' };
+      if (!token) {
+        return { success: false, error: 'No token found' };
       }
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const userData = JSON.parse(savedUser);
-      setUser(userData);
-      return { success: true, user: userData };
+      const response = await fetch(`${API_URL}/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUser(data.data);
+        return { success: true, user: data.data };
+      } else {
+        // Token might be invalid, logout user
+        logout();
+        return { success: false, error: data.message };
+      }
     } catch (error) {
       console.error('Get current user error:', error);
-      return { success: false, error: 'Failed to get user data' };
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  // Update user profile
+  const updateProfile = async (userData) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return { success: false, error: 'No token found' };
+      }
+
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUser(data.data);
+        localStorage.setItem('user', JSON.stringify(data.data));
+        return { success: true, user: data.data };
+      } else {
+        return { success: false, error: data.message };
+      }
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { success: false, error: 'Network error' };
     }
   };
 
@@ -123,7 +164,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    getCurrentUser
+    getCurrentUser,
+    updateProfile
   };
 
   return (

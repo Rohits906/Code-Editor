@@ -36,7 +36,7 @@ const Login = () => {
         const result = await login(formData.email, formData.password);
         
         if (result.success) {
-          console.log('Login successful, navigating to dashboard...');
+          console.log('✅ Login successful! Redirecting to dashboard...');
           navigate('/dashboard');
         } else {
           setError(result.error);
@@ -50,7 +50,7 @@ const Login = () => {
         );
         
         if (result.success) {
-          console.log('Registration successful, navigating to dashboard...');
+          console.log('✅ Registration successful! Redirecting to dashboard...');
           navigate('/dashboard');
         } else {
           setError(result.error);
@@ -58,7 +58,7 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Auth error:', err);
-      setError('An error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -230,7 +230,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="w-full bg-gray-700 border border-gray-600 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-blue-500 transition-all duration-300"
-                  placeholder="abc@gmail.com"
+                  placeholder="Enter your email"
                   required
                 />
               </div>
@@ -247,7 +247,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full bg-gray-700 border border-gray-600 rounded-xl pl-12 pr-12 py-4 focus:outline-none focus:border-blue-500 transition-all duration-300"
-                  placeholder="********"
+                  placeholder="Enter your password"
                   required
                 />
                 <button
@@ -258,6 +258,11 @@ const Login = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              {!isLogin && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Use 6+ characters for password
+                </p>
+              )}
             </div>
 
             {/* Remember Me & Forgot Password - Only for login */}
@@ -273,9 +278,31 @@ const Login = () => {
               </div>
             )}
 
-            {/* Submit Button - FIXED: Removed invalid navigate prop */}
+            {/* Terms Agreement - Only for registration */}
+            {!isLogin && (
+              <label className="flex items-start space-x-2">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 mt-1 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" 
+                  required 
+                />
+                <span className="text-sm text-gray-300">
+                  I agree to the{' '}
+                  <button type="button" className="text-blue-500 hover:text-blue-400 transition-colors">
+                    Terms of Service
+                  </button>{' '}
+                  and{' '}
+                  <button type="button" className="text-blue-500 hover:text-blue-400 transition-colors">
+                    Privacy Policy
+                  </button>
+                </span>
+              </label>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
