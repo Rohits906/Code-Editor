@@ -39,7 +39,7 @@ const Home = () => {
               Login
             </Link>
             <Link 
-              to="/login"
+              to="/register"
               className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/30"
             >
               Register Now
@@ -66,16 +66,16 @@ const Home = () => {
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Link 
-                to="/login"
+                to="/register"
                 className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-lg font-semibold transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/30 flex items-center justify-center space-x-2"
               >
                 <Star className="w-5 h-5" />
                 <span>Start Coding Free</span>
               </Link>
-              <button className="px-8 py-4 rounded-xl border border-gray-600 hover:border-blue-500 text-lg font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 flex items-center justify-center space-x-2">
+              <Link to="https://github.com/Rohits906/Code-Editor" target="_blank"  className="px-8 py-4 rounded-xl border border-gray-600 hover:border-blue-500 text-lg font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 flex items-center justify-center space-x-2">
                 <Github className="w-5 h-5" />
                 <span>View on GitHub</span>
-              </button>
+              </Link>
             </div>
 
             {/* Stats */}

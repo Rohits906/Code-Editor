@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
-import { Code, Eye, EyeOff, Github, Chrome, Mail, Lock, ArrowRight, User, ArrowLeft } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Code, Eye, EyeOff, Mail, Lock, ArrowRight, User, ArrowLeft } from 'lucide-react';
 
-const Login = () => {
+const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -15,7 +14,7 @@ const Login = () => {
     password: ''
   });
 
-  const { login, register } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -32,47 +31,25 @@ const Login = () => {
     setError('');
 
     try {
-      if (isLogin) {
-        const result = await login(formData.email, formData.password);
-        
-        if (result.success) {
-          console.log('✅ Login successful! Redirecting to dashboard...');
-          navigate('/dashboard');
-        } else {
-          setError(result.error);
-        }
+      const result = await register(
+        formData.firstName, 
+        formData.lastName, 
+        formData.email, 
+        formData.password
+      );
+      
+      if (result.success) {
+        console.log('✅ Registration successful! Redirecting to dashboard...');
+        navigate('/dashboard');
       } else {
-        const result = await register(
-          formData.firstName, 
-          formData.lastName, 
-          formData.email, 
-          formData.password
-        );
-        
-        if (result.success) {
-          console.log('✅ Registration successful! Redirecting to dashboard...');
-          navigate('/dashboard');
-        } else {
-          setError(result.error);
-        }
+        setError(result.error);
       }
     } catch (err) {
-      console.error('Auth error:', err);
+      console.error('Registration error:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: ''
-    });
-    setError('');
   };
 
   return (
@@ -92,16 +69,13 @@ const Login = () => {
 
           <div className="space-y-6">
             <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-              {isLogin ? 'Welcome Back to' : 'Join'} 
+              Join{' '}
               <span className="block bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                {isLogin ? 'Your Workspace' : 'CodeFlow'}
+                CodeFlow
               </span>
             </h1>
             <p className="text-xl text-gray-300 leading-relaxed">
-              {isLogin 
-                ? 'Sign in to access your projects, collaborate with your team, and continue your coding journey.'
-                : 'Create your account to start coding, collaborate with developers worldwide, and bring your ideas to life.'
-              }
+              Create your account to start coding, collaborate with developers worldwide, and bring your ideas to life.
             </p>
           </div>
 
@@ -138,14 +112,14 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Right Side - Auth Form */}
+        {/* Right Side - Registration Form */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700 shadow-2xl">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-2">
-              {isLogin ? 'Sign In' : 'Create Account'}
+              Create Account
             </h2>
             <p className="text-gray-400">
-              {isLogin ? 'Enter your credentials to continue' : 'Fill in your details to get started'}
+              Fill in your details to get started
             </p>
           </div>
 
@@ -156,68 +130,41 @@ const Login = () => {
             </div>
           )}
 
-          {/* Social Login Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <button 
-              type="button"
-              className="flex-1 flex items-center justify-center space-x-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-xl py-3 px-6 transition-all duration-300 hover:border-blue-500/50"
-            >
-              <Chrome className="w-5 h-5" />
-              <span>Google</span>
-            </button>
-            <button 
-              type="button"
-              className="flex-1 flex items-center justify-center space-x-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-xl py-3 px-6 transition-all duration-300 hover:border-purple-500/50"
-            >
-              <Github className="w-5 h-5" />
-              <span>GitHub</span>
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center mb-6">
-            <div className="flex-1 border-t border-gray-700"></div>
-            <span className="px-4 text-gray-400 text-sm">OR</span>
-            <div className="flex-1 border-t border-gray-700"></div>
-          </div>
-
-          {/* Auth Form */}
+          {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Fields - Only show for registration */}
-            {!isLogin && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">First Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-blue-500 transition-all duration-300"
-                      placeholder="John"
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Last Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-blue-500 transition-all duration-300"
-                      placeholder="Doe"
-                      required={!isLogin}
-                    />
-                  </div>
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">First Name</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-blue-500 transition-all duration-300"
+                    placeholder="John"
+                    required
+                  />
                 </div>
               </div>
-            )}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Last Name</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-blue-500 transition-all duration-300"
+                    placeholder="Doe"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* Email Field */}
             <div className="space-y-2">
@@ -247,7 +194,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full bg-gray-700 border border-gray-600 rounded-xl pl-12 pr-12 py-4 focus:outline-none focus:border-blue-500 transition-all duration-300"
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   required
                 />
                 <button
@@ -258,85 +205,71 @@ const Login = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {!isLogin && (
-                <p className="text-xs text-gray-400 mt-1">
-                  Use 6+ characters for password
-                </p>
-              )}
+              <p className="text-xs text-gray-400 mt-1">
+                Use 6+ characters for password
+              </p>
             </div>
 
-            {/* Remember Me & Forgot Password - Only for login */}
-            {isLogin && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center space-x-2">
-                  <input type="checkbox" className="w-4 h-4 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
-                  <span className="text-sm text-gray-300">Remember me</span>
-                </label>
-                <button type="button" className="text-sm text-blue-500 hover:text-blue-400 transition-colors">
-                  Forgot password?
+            {/* Terms Agreement */}
+            <label className="flex items-start space-x-2">
+              <input 
+                type="checkbox" 
+                className="w-4 h-4 mt-1 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" 
+                required 
+              />
+              <span className="text-sm text-gray-300">
+                I agree to the{' '}
+                <button type="button" className="text-blue-500 hover:text-blue-400 transition-colors">
+                  Terms of Service
+                </button>{' '}
+                and{' '}
+                <button type="button" className="text-blue-500 hover:text-blue-400 transition-colors">
+                  Privacy Policy
                 </button>
-              </div>
-            )}
-
-            {/* Terms Agreement - Only for registration */}
-            {!isLogin && (
-              <label className="flex items-start space-x-2">
-                <input 
-                  type="checkbox" 
-                  className="w-4 h-4 mt-1 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" 
-                  required 
-                />
-                <span className="text-sm text-gray-300">
-                  I agree to the{' '}
-                  <button type="button" className="text-blue-500 hover:text-blue-400 transition-colors">
-                    Terms of Service
-                  </button>{' '}
-                  and{' '}
-                  <button type="button" className="text-blue-500 hover:text-blue-400 transition-colors">
-                    Privacy Policy
-                  </button>
-                </span>
-              </label>
-            )}
+              </span>
+            </label>
 
             {/* Submit Button */}
             <button
               type="submit"
-              onClick={handleSubmit}
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>{isLogin ? 'Signing In...' : 'Creating Account...'}</span>
+                  <span>Creating Account...</span>
                 </>
               ) : (
                 <>
-                  <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                  <span>Create Account</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Toggle Auth Mode */}
+          {/* Login Link */}
           <div className="text-center mt-8 pt-6 border-t border-gray-700">
             <p className="text-gray-400">
-              Don't have an account?{' '}
+              Already have an account?{' '}
               <Link 
-                to="/register"
+                to="/login"
                 className="text-blue-500 hover:text-blue-400 font-semibold transition-colors flex items-center justify-center space-x-1 mx-auto"
               >
-                <span>Create account</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Sign in</span>
+                <ArrowLeft className="w-4 h-4" />
               </Link>
             </p>
           </div>
         </div>
       </div>
+
+      {/* Background Decorations */}
+      <div className="absolute top-1/4 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
     </div>
   );
 };
 
-export default Login;
+export default Register;
