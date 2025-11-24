@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Code, Eye, EyeOff, Mail, Lock, ArrowRight, User, ArrowLeft } from 'lucide-react';
+import { Code, Eye, EyeOff, Mail, Lock, ArrowRight, User } from 'lucide-react';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -258,7 +258,7 @@ const Register = () => {
                 className="text-blue-500 hover:text-blue-400 font-semibold transition-colors flex items-center justify-center space-x-1 mx-auto"
               >
                 <span>Sign in</span>
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </p>
           </div>
