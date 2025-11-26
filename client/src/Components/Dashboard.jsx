@@ -9,6 +9,8 @@ import {
   Eye, Download, MessageCircle, GitBranch, Cpu, Rocket, LayoutTemplate
 } from 'lucide-react';
 
+const API_URL = 'http://localhost:5000/api';
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [projects, setProjects] = useState([]);
@@ -20,6 +22,7 @@ const Dashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [activity, setActivity] = useState([]);
   const [liveSessions, setLiveSessions] = useState([]);
+  const [pageLoaded, setPageLoaded] = useState(false);
 
   const [newProject, setNewProject] = useState({
     name: '',
@@ -56,53 +59,69 @@ const Dashboard = () => {
     { id: 4, name: 'Mobile App UI', description: 'React Native starter template', language: 'javascript', category: 'mobile', stars: 203 }
   ];
 
-  // Fetch user's projects
+  // Fetch user's projects from backend
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        const mockProjects = [
-          {
-            _id: '1',
-            name: 'E-commerce Dashboard',
-            description: 'Modern e-commerce analytics dashboard',
-            language: 'javascript',
-            lastModified: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            collaborators: 2,
-            isLive: true
-          },
-          {
-            _id: '2',
-            name: 'API Server',
-            description: 'Backend API with authentication',
-            language: 'python',
-            lastModified: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            collaborators: 1,
-            isLive: false
-          },
-          {
-            _id: '3',
-            name: 'Mobile App UI',
-            description: 'React Native mobile application',
-            language: 'javascript',
-            lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            collaborators: 0,
-            isLive: true
-          }
-        ];
-        setProjects(mockProjects);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/projects/project`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setProjects(data.data);
+        // Set mock data for other sections
         setAnalytics(mockAnalytics);
         setActivity(mockActivity);
         setLiveSessions(mockLiveSessions);
-        setLoading(false);
-      }, 1000);
+      } else {
+        throw new Error(data.message || 'Failed to fetch projects');
+      }
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
+      // Fallback to mock data if API fails
+      const mockProjects = [
+        {
+          _id: '1',
+          name: 'E-commerce Dashboard',
+          description: 'Modern e-commerce analytics dashboard',
+          language: 'javascript',
+          lastModified: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          collaborators: 2,
+          isLive: true
+        },
+        {
+          _id: '2',
+          name: 'API Server',
+          description: 'Backend API with authentication',
+          language: 'python',
+          lastModified: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+          collaborators: 1,
+          isLive: false
+        }
+      ];
+      setProjects(mockProjects);
+      setAnalytics(mockAnalytics);
+      setActivity(mockActivity);
+      setLiveSessions(mockLiveSessions);
+    } finally {
       setLoading(false);
+      if (!pageLoaded) {
+        setPageLoaded(true);
+      }
     }
-  }, []);
+  }, [pageLoaded]);
 
   useEffect(() => {
     fetchProjects();
@@ -114,6 +133,9 @@ const Dashboard = () => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setShowCommandPalette(true);
+      }
+      if (e.key === 'Escape') {
+        setShowCommandPalette(false);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -130,16 +152,20 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
-      // Simulate API call
-      setTimeout(() => {
-        const newProj = {
-          _id: Date.now().toString(),
-          ...newProject,
-          lastModified: new Date().toISOString(),
-          collaborators: 0,
-          isLive: false
-        };
-        setProjects(prev => [newProj, ...prev]);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/projects/project`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newProject),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        await fetchProjects();
         setShowCreateProject(false);
         setNewProject({
           name: '',
@@ -148,11 +174,13 @@ const Dashboard = () => {
           code: '// Start coding here...'
         });
         toast.success('Project created successfully!');
-        setLoading(false);
-      }, 1000);
+      } else {
+        throw new Error(data.message || 'Failed to create project');
+      }
     } catch (error) {
       console.error('Error creating project:', error);
-      toast.error('Error creating project');
+      toast.error(error.message || 'Error creating project');
+    } finally {
       setLoading(false);
     }
   };
@@ -163,33 +191,77 @@ const Dashboard = () => {
     }
 
     try {
-      setProjects(prev => prev.filter(p => p._id !== projectId));
-      toast.success('Project deleted successfully');
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/projects/project/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        await fetchProjects();
+        toast.success('Project deleted successfully');
+      } else {
+        throw new Error(data.message || 'Failed to delete project');
+      }
     } catch (error) {
       console.error('Error deleting project:', error);
-      toast.error('Error deleting project');
+      toast.error(error.message || 'Error deleting project');
     }
   };
 
   const handleDuplicateProject = async (projectId) => {
     try {
       const project = projects.find(p => p._id === projectId);
-      const duplicatedProject = {
-        ...project,
-        _id: Date.now().toString(),
-        name: `${project.name} (Copy)`,
-        lastModified: new Date().toISOString()
-      };
-      setProjects(prev => [duplicatedProject, ...prev]);
-      toast.success('Project duplicated successfully');
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/projects/project`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${project.name} (Copy)`,
+          description: project.description,
+          language: project.language,
+          code: project.code
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        await fetchProjects();
+        toast.success('Project duplicated successfully');
+      } else {
+        throw new Error(data.message || 'Failed to duplicate project');
+      }
     } catch (error) {
-      toast.error('Failed to duplicate project');
+      console.error('Error duplicating project:', error);
+      toast.error(error.message || 'Failed to duplicate project');
     }
   };
 
   const handleShareProject = async (projectId) => {
-    toast.success('Share link copied to clipboard!');
-    // In real implementation, this would copy the shareable link
+    try {
+      const project = projects.find(p => p._id === projectId);
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      // In a real implementation, this would make an API call to generate a shareable link
+      const shareUrl = `${window.location.origin}/project/${projectId}/share`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Share link copied to clipboard!');
+    } catch (error) {
+      console.error('Error sharing project:', error);
+      toast.error('Failed to share project');
+    }
   };
 
   const handleJoinSession = async (sessionId) => {
@@ -203,10 +275,10 @@ const Dashboard = () => {
 
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchQuery.toLowerCase())
+    project.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Animation variants
+  // Animation variants - only animate on initial load
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -256,8 +328,8 @@ const Dashboard = () => {
   // Enhanced Header Component
   const EnhancedHeader = () => (
     <motion.header 
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
+      initial={!pageLoaded ? { y: -50, opacity: 0 } : false}
+      animate={!pageLoaded ? { y: 0, opacity: 1 } : false}
       className="border-b border-gray-800/50 backdrop-blur-lg bg-gray-900/80 sticky top-0 z-40"
     >
       <div className="container mx-auto px-4 py-4">
@@ -276,9 +348,9 @@ const Dashboard = () => {
           
           {/* Search Bar */}
           <motion.div 
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            initial={!pageLoaded ? { scale: 0.95, opacity: 0 } : false}
+            animate={!pageLoaded ? { scale: 1, opacity: 1 } : false}
+            transition={!pageLoaded ? { delay: 0.2 } : false}
             className="flex-1 max-w-2xl mx-8"
           >
             <div className="relative">
@@ -340,9 +412,9 @@ const Dashboard = () => {
   // Hero Section with Particles
   const HeroSection = () => (
     <motion.section 
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8 }}
+      initial={!pageLoaded ? { opacity: 0, y: 30 } : false}
+      animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
+      transition={!pageLoaded ? { duration: 0.8 } : false}
       className="relative overflow-hidden"
     >
       {/* Animated Background Elements */}
@@ -355,20 +427,20 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-16 relative z-10">
         <div className="text-center mb-12">
           <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+            animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
+            transition={!pageLoaded ? { delay: 0.2 } : false}
             className="text-4xl md:text-6xl font-bold mb-6"
           >
             Welcome to{' '}
-            <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent animate-gradient">
+            <span className="bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent">
               CodeFlow Editor
             </span>
           </motion.h1>
           <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+            animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
+            transition={!pageLoaded ? { delay: 0.3 } : false}
             className="text-xl text-gray-300 max-w-2xl mx-auto mb-8"
           >
             Your powerful online code editor with real-time collaboration, multiple language support, and cloud storage.
@@ -376,24 +448,24 @@ const Dashboard = () => {
 
           {/* Stats Cards */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+            animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
+            transition={!pageLoaded ? { delay: 0.4 } : false}
             className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto mb-8"
           >
             {[
               { icon: Users2, label: 'Active Users', value: '1.2k', color: 'blue' },
-              { icon: GitBranch, label: 'Projects', value: '5.7k', color: 'green' },
+              { icon: GitBranch, label: 'Projects', value: projects.length, color: 'green' },
               { icon: Cpu, label: 'Sessions', value: '243', color: 'purple' },
               { icon: Rocket, label: 'Deployments', value: '89', color: 'orange' }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
+                initial={!pageLoaded ? { opacity: 0, scale: 0.9 } : false}
+                animate={!pageLoaded ? { opacity: 1, scale: 1 } : false}
+                transition={!pageLoaded ? { delay: 0.5 + index * 0.1 } : false}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                className={`bg-gray-800/30 backdrop-blur-sm rounded-2xl p-4 border border-${stat.color}-500/20 hover:border-${stat.color}-500/40 transition-all duration-300`}
+                className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-4 border border-gray-700 hover:border-gray-600 transition-all duration-300"
               >
                 <stat.icon className={`w-6 h-6 text-${stat.color}-400 mb-2 mx-auto`} />
                 <div className="text-2xl font-bold text-white">{stat.value}</div>
@@ -404,9 +476,9 @@ const Dashboard = () => {
 
           {/* CTA Buttons */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+            animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
+            transition={!pageLoaded ? { delay: 0.5 } : false}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <motion.button
@@ -436,9 +508,9 @@ const Dashboard = () => {
   // Quick Actions Section
   const QuickActions = () => (
     <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
+      variants={!pageLoaded ? containerVariants : false}
+      initial={!pageLoaded ? "hidden" : false}
+      animate={!pageLoaded ? "visible" : false}
       className="grid md:grid-cols-3 gap-6 mb-12"
     >
       {[
@@ -466,15 +538,15 @@ const Dashboard = () => {
       ].map((action, index) => (
         <motion.button
           key={action.title}
-          variants={itemVariants}
+          variants={!pageLoaded ? itemVariants : false}
           whileHover={{ y: -8, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={action.action}
-          className={`bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-${action.color}-500/50 transition-all duration-300 text-left group`}
+          className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-gray-600 transition-all duration-300 text-left group"
         >
           <div className="flex items-center space-x-3 mb-4">
-            <div className={`p-2 bg-${action.color}-500/20 rounded-lg group-hover:bg-${action.color}-500/30 transition-colors`}>
-              <action.icon className={`w-6 h-6 text-${action.color}-400`} />
+            <div className="p-2 bg-gray-700/50 rounded-lg group-hover:bg-gray-600/50 transition-colors">
+              <action.icon className="w-6 h-6 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold">{action.title}</h3>
           </div>
@@ -487,8 +559,8 @@ const Dashboard = () => {
   // Analytics Summary Component
   const AnalyticsSummary = () => (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={!pageLoaded ? { opacity: 0, x: -20 } : false}
+      animate={!pageLoaded ? { opacity: 1, x: 0 } : false}
       className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 mb-8"
     >
       <h3 className="text-xl font-semibold mb-6 flex items-center space-x-2">
@@ -515,7 +587,7 @@ const Dashboard = () => {
             <Target className="w-4 h-4 text-purple-400" />
             <span className="text-sm font-medium">Active Projects</span>
           </div>
-          <div className="text-2xl font-bold text-white">{analytics?.activeProjects || 0}</div>
+          <div className="text-2xl font-bold text-white">{projects.length}</div>
         </div>
         <div className="text-center p-4 bg-gray-700/30 rounded-xl">
           <div className="flex items-center justify-center space-x-1 mb-2">
@@ -531,8 +603,8 @@ const Dashboard = () => {
   // Activity Feed Component
   const ActivityFeed = () => (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
+      initial={!pageLoaded ? { opacity: 0, x: 20 } : false}
+      animate={!pageLoaded ? { opacity: 1, x: 0 } : false}
       className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700"
     >
       <div className="flex items-center justify-between mb-6">
@@ -546,9 +618,9 @@ const Dashboard = () => {
         {activity.map((item, index) => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={!pageLoaded ? { opacity: 0, x: 20 } : false}
+            animate={!pageLoaded ? { opacity: 1, x: 0 } : false}
+            transition={!pageLoaded ? { delay: index * 0.1 } : false}
             className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700/30 transition-colors cursor-pointer group"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -570,8 +642,8 @@ const Dashboard = () => {
   const ProjectCard = ({ project }) => (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={!pageLoaded ? { opacity: 0, scale: 0.9 } : false}
+      animate={!pageLoaded ? { opacity: 1, scale: 1 } : false}
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className="bg-gray-800/30 backdrop-blur-sm rounded-xl p-4 border border-gray-700 hover:border-blue-500/50 transition-all duration-300 group relative"
@@ -629,10 +701,10 @@ const Dashboard = () => {
           <span className="capitalize text-gray-300 bg-gray-700/50 px-2 py-1 rounded">
             {project.language}
           </span>
-          {project.collaborators > 0 && (
+          {project.collaborators && project.collaborators.length > 0 && (
             <span className="flex items-center space-x-1 text-gray-400">
               <Users2 className="w-3 h-3" />
-              <span>{project.collaborators}</span>
+              <span>{project.collaborators.length}</span>
             </span>
           )}
         </div>
@@ -646,8 +718,8 @@ const Dashboard = () => {
   // Live Sessions Component
   const LiveSessions = () => (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={!pageLoaded ? { opacity: 0 } : false}
+      animate={!pageLoaded ? { opacity: 1 } : false}
       className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700"
     >
       <div className="flex items-center justify-between mb-6">
@@ -669,9 +741,9 @@ const Dashboard = () => {
         {liveSessions.map((session, index) => (
           <motion.div
             key={session.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={!pageLoaded ? { opacity: 0, x: -20 } : false}
+            animate={!pageLoaded ? { opacity: 1, x: 0 } : false}
+            transition={!pageLoaded ? { delay: index * 0.1 } : false}
             className="flex items-center justify-between p-4 bg-gray-700/30 rounded-xl hover:bg-gray-700/50 transition-colors group"
           >
             <div className="flex items-center space-x-3">
@@ -701,8 +773,8 @@ const Dashboard = () => {
   // Templates Gallery Component
   const TemplatesGallery = () => (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={!pageLoaded ? { opacity: 0 } : false}
+      animate={!pageLoaded ? { opacity: 1 } : false}
       className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 border border-gray-700"
     >
       <div className="flex items-center justify-between mb-6">
@@ -720,9 +792,9 @@ const Dashboard = () => {
         {mockTemplates.map((template, index) => (
           <motion.div
             key={template.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+            animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
+            transition={!pageLoaded ? { delay: index * 0.1 } : false}
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
             className="bg-gray-700/30 rounded-xl p-4 border border-gray-600 hover:border-purple-500/50 transition-all duration-300 group"
           >
@@ -896,8 +968,8 @@ const Dashboard = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={!pageLoaded ? { opacity: 0 } : false}
+      animate={!pageLoaded ? { opacity: 1 } : false}
       className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-black text-white"
     >
       <Toaster 
@@ -925,8 +997,8 @@ const Dashboard = () => {
           <div className="lg:col-span-3 space-y-8">
             {/* Tab Navigation */}
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+              animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
               className="flex space-x-4 border-b border-gray-800"
             >
               {[
@@ -958,8 +1030,8 @@ const Dashboard = () => {
               {activeTab === 'projects' && (
                 <motion.div
                   key="projects"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+                  animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
                   exit={{ opacity: 0, y: -20 }}
                   className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
                 >
@@ -984,8 +1056,8 @@ const Dashboard = () => {
               {activeTab === 'sessions' && (
                 <motion.div
                   key="sessions"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+                  animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <LiveSessions />
@@ -995,8 +1067,8 @@ const Dashboard = () => {
               {activeTab === 'templates' && (
                 <motion.div
                   key="templates"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={!pageLoaded ? { opacity: 0, y: 20 } : false}
+                  animate={!pageLoaded ? { opacity: 1, y: 0 } : false}
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <TemplatesGallery />
@@ -1019,326 +1091,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
-// import React, { useState, useEffect } from 'react';
-// import { useAuth } from '../context/AuthContext';
-// import { Code, LogOut, Settings, User, FileCode, Share2, Plus, Trash2, Edit3 } from 'lucide-react';
-
-// const Dashboard = () => {
-//   const { user, logout } = useAuth();
-//   const [projects, setProjects] = useState([]);
-//   const [loading, setLoading] = useState(false);
-//   const [showCreateProject, setShowCreateProject] = useState(false);
-//   const [newProject, setNewProject] = useState({
-//     name: '',
-//     description: '',
-//     language: 'javascript',
-//     code: '// Start coding here...'
-//   });
-
-//   // Fetch user's projects
-//   const fetchProjects = async () => {
-//     try {
-//       const token = localStorage.getItem('token');
-//       const response = await fetch('http://localhost:5000/api/projects', {
-//         method: 'GET',
-//         headers: {
-//           'Authorization': `Bearer ${token}`,
-//           'Content-Type': 'application/json',
-//         },
-//       });
-
-//       const data = await response.json();
-//       if (data.success) {
-//         setProjects(data.data);
-//       }
-//     } catch (error) {
-//       console.error('Error fetching projects:', error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchProjects();
-//   }, []);
-
-//   const handleLogout = () => {
-//     logout();
-//   };
-
-//   const handleCreateProject = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-
-//     try {
-//       const token = localStorage.getItem('token');
-//       const response = await fetch('http://localhost:5000/api/projects', {
-//         method: 'POST',
-//         headers: {
-//           'Authorization': `Bearer ${token}`,
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(newProject),
-//       });
-
-//       const data = await response.json();
-//       if (data.success) {
-//         await fetchProjects();
-//         setShowCreateProject(false);
-//         setNewProject({
-//           name: '',
-//           description: '',
-//           language: 'javascript',
-//           code: '// Start coding here...'
-//         });
-//       } else {
-//         alert('Failed to create project: ' + data.message);
-//       }
-//     } catch (error) {
-//       console.error('Error creating project:', error);
-//       alert('Error creating project');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleDeleteProject = async (projectId) => {
-//     if (!window.confirm('Are you sure you want to delete this project?')) {
-//       return;
-//     }
-
-//     try {
-//       const token = localStorage.getItem('token');
-//       const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
-//         method: 'DELETE',
-//         headers: {
-//           'Authorization': `Bearer ${token}`,
-//         },
-//       });
-
-//       const data = await response.json();
-//       if (data.success) {
-//         await fetchProjects();
-//       } else {
-//         alert('Failed to delete project: ' + data.message);
-//       }
-//     } catch (error) {
-//       console.error('Error deleting project:', error);
-//       alert('Error deleting project');
-//     }
-//   };
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
-//       {/* Header */}
-//       <header className="border-b border-gray-800">
-//         <div className="container mx-auto px-4 py-4">
-//           <div className="flex justify-between items-center">
-//             <div className="flex items-center space-x-3">
-//               <div className="p-2 bg-blue-500 rounded-lg">
-//                 <Code className="w-6 h-6" />
-//               </div>
-//               <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-//                 CodeFlow
-//               </span>
-//             </div>
-            
-//             <div className="flex items-center space-x-4">
-//               <div className="flex items-center space-x-2 text-gray-300">
-//                 <User className="w-5 h-5" />
-//                 <span>Welcome, {user?.firstName || user?.name || 'User'}</span>
-//               </div>
-//               <button
-//                 onClick={handleLogout}
-//                 className="flex items-center space-x-2 px-4 py-2 rounded-lg border border-gray-600 hover:border-red-500 hover:text-red-400 transition-all duration-300"
-//               >
-//                 <LogOut className="w-4 h-4" />
-//                 <span>Logout</span>
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       </header>
-
-//       {/* Main Content */}
-//       <main className="container mx-auto px-4 py-8">
-//         <div className="text-center mb-12">
-//           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-//             Welcome to{' '}
-//             <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-//               CodeFlow Editor
-//             </span>
-//           </h1>
-//           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-//             Your powerful online code editor with real-time collaboration, multiple language support, and cloud storage.
-//           </p>
-//         </div>
-
-//         {/* Quick Actions */}
-//         <div className="grid md:grid-cols-3 gap-6 mb-12">
-//           <button 
-//             onClick={() => setShowCreateProject(true)}
-//             className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-blue-500/50 transition-all duration-300 text-left"
-//           >
-//             <div className="flex items-center space-x-3 mb-4">
-//               <Plus className="w-8 h-8 text-blue-500" />
-//               <h3 className="text-xl font-semibold">New Project</h3>
-//             </div>
-//             <p className="text-gray-400">Start a new coding project with your favorite language</p>
-//           </button>
-
-//           <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-green-500/50 transition-all duration-300">
-//             <div className="flex items-center space-x-3 mb-4">
-//               <Settings className="w-8 h-8 text-green-500" />
-//               <h3 className="text-xl font-semibold">My Projects</h3>
-//             </div>
-//             <p className="text-gray-400">Access and manage your existing projects</p>
-//           </div>
-
-//           <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-purple-500/50 transition-all duration-300">
-//             <div className="flex items-center space-x-3 mb-4">
-//               <Share2 className="w-8 h-8 text-purple-500" />
-//               <h3 className="text-xl font-semibold">Collaborate</h3>
-//             </div>
-//             <p className="text-gray-400">Invite team members and code together in real-time</p>
-//           </div>
-//         </div>
-
-//         {/* User Info Card */}
-//         <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700 mb-8">
-//           <h3 className="text-xl font-semibold mb-4">User Information</h3>
-//           <div className="grid md:grid-cols-2 gap-4">
-//             <div>
-//               <p className="text-gray-400">Name</p>
-//               <p className="text-white">{user?.firstName} {user?.lastName}</p>
-//             </div>
-//             <div>
-//               <p className="text-gray-400">Email</p>
-//               <p className="text-white">{user?.email}</p>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Create Project Modal */}
-//         {showCreateProject && (
-//           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-//             <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full border border-gray-700">
-//               <div className="flex justify-between items-center mb-6">
-//                 <h3 className="text-2xl font-bold">Create New Project</h3>
-//                 <button 
-//                   onClick={() => setShowCreateProject(false)}
-//                   className="text-gray-400 hover:text-white"
-//                 >
-//                   ✕
-//                 </button>
-//               </div>
-//               <form onSubmit={handleCreateProject} className="space-y-4">
-//                 <div>
-//                   <label className="block text-sm font-medium mb-2">Project Name</label>
-//                   <input 
-//                     type="text" 
-//                     value={newProject.name}
-//                     onChange={(e) => setNewProject({...newProject, name: e.target.value})}
-//                     className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500"
-//                     placeholder="My Awesome Project"
-//                     required
-//                   />
-//                 </div>
-//                 <div>
-//                   <label className="block text-sm font-medium mb-2">Description</label>
-//                   <textarea 
-//                     value={newProject.description}
-//                     onChange={(e) => setNewProject({...newProject, description: e.target.value})}
-//                     className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 resize-none"
-//                     placeholder="Project description"
-//                     rows="3"
-//                   />
-//                 </div>
-//                 <div>
-//                   <label className="block text-sm font-medium mb-2">Language</label>
-//                   <select 
-//                     value={newProject.language}
-//                     onChange={(e) => setNewProject({...newProject, language: e.target.value})}
-//                     className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500"
-//                   >
-//                     <option value="javascript">JavaScript</option>
-//                     <option value="python">Python</option>
-//                     <option value="java">Java</option>
-//                     <option value="cpp">C++</option>
-//                     <option value="html">HTML</option>
-//                     <option value="css">CSS</option>
-//                     <option value="typescript">TypeScript</option>
-//                   </select>
-//                 </div>
-//                 <button 
-//                   type="submit"
-//                   disabled={loading}
-//                   className="w-full bg-gradient-to-r from-blue-500 to-purple-600 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 flex items-center justify-center space-x-2"
-//                 >
-//                   {loading ? (
-//                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-//                   ) : (
-//                     <>
-//                       <Plus className="w-5 h-5" />
-//                       <span>Create Project</span>
-//                     </>
-//                   )}
-//                 </button>
-//               </form>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* Projects Section */}
-//         <div className="mt-12">
-//           <div className="flex justify-between items-center mb-6">
-//             <h2 className="text-2xl font-bold">My Projects</h2>
-//             <span className="text-gray-400">{projects.length} projects</span>
-//           </div>
-          
-//           {projects.length === 0 ? (
-//             <div className="text-center py-12">
-//               <FileCode className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-//               <h3 className="text-xl font-semibold text-gray-400 mb-2">No projects yet</h3>
-//               <p className="text-gray-500">Create your first project to get started!</p>
-//             </div>
-//           ) : (
-//             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-//               {projects.map((project) => (
-//                 <div key={project._id} className="bg-gray-800/30 rounded-lg p-4 border border-gray-700 hover:border-blue-500/50 transition-all duration-300 relative group">
-//                   <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-//                     <button 
-//                       className="p-1 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-//                     >
-//                       <Edit3 className="w-3 h-3" />
-//                     </button>
-//                     <button 
-//                       onClick={() => handleDeleteProject(project._id)}
-//                       className="p-1 bg-red-600 hover:bg-red-700 rounded transition-colors"
-//                     >
-//                       <Trash2 className="w-3 h-3" />
-//                     </button>
-//                   </div>
-
-//                   <div className="flex items-center space-x-2 mb-2">
-//                     <FileCode className="w-4 h-4 text-blue-500" />
-//                     <h3 className="font-semibold">{project.name}</h3>
-//                   </div>
-//                   {project.description && (
-//                     <p className="text-gray-400 text-sm mb-2">{project.description}</p>
-//                   )}
-//                   <div className="flex justify-between items-center text-xs text-gray-500">
-//                     <span className="capitalize">{project.language}</span>
-//                     <span>Last modified: {new Date(project.lastModified).toLocaleDateString()}</span>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           )}
-//         </div>
-//       </main>
-//     </div>
-//   );
-// };
-
-// export default Dashboard;

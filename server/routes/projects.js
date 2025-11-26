@@ -10,11 +10,11 @@ const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.route('/')
+router.route('/project')
   .get(protect, getProjects)
   .post(protect, createProject);
 
-router.route('/:id')
+router.route('/project/:id')
   .get(protect, getProject)
   .put(protect, updateProject)
   .delete(protect, deleteProject);
