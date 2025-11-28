@@ -35,7 +35,6 @@ const Dashboard = () => {
   const mockAnalytics = {
     streak: 7,
     linesOfCode: 1250,
-    activeProjects: 3,
     collaborationScore: 4.5,
     weeklyProgress: 75
   };
