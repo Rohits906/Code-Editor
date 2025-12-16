@@ -74,7 +74,7 @@ const Dashboard = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/projects`, {
+      const response = await fetch(`${API_URL}/projects/project`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
