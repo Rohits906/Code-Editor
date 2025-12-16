@@ -1,11 +1,11 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -14,15 +14,17 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = "http://localhost:5000/api";
 
   // Check if user is logged in on component mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    if (token && savedUser) {
+    const storedToken = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (storedToken && savedUser) {
+      setToken(storedToken);
       setIsAuthenticated(true);
       setUser(JSON.parse(savedUser));
     }
@@ -30,12 +32,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = async (email, password) => {  
+  const login = async (email, password) => {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -43,8 +45,9 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem('token', data.data.token);
-        localStorage.setItem('user', JSON.stringify(data.data));
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("user", JSON.stringify(data.data));
+        setToken(data.data.token);
         setIsAuthenticated(true);
         setUser(data.data);
         return { success: true };
@@ -52,8 +55,8 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.message };
       }
     } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: 'Network error. Please try again.' };
+      console.error("Login error:", error);
+      return { success: false, error: "Network error. Please try again." };
     }
   };
 
@@ -61,9 +64,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (firstName, lastName, email, password) => {
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ firstName, lastName, email, password }),
       });
@@ -71,8 +74,8 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (data.success) {
-        localStorage.setItem('token', data.data.token);
-        localStorage.setItem('user', JSON.stringify(data.data));
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("user", JSON.stringify(data.data));
         setIsAuthenticated(true);
         setUser(data.data);
         return { success: true };
@@ -80,15 +83,16 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.message };
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      return { success: false, error: 'Network error. Please try again.' };
+      console.error("Registration error:", error);
+      return { success: false, error: "Network error. Please try again." };
     }
   };
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
     setIsAuthenticated(false);
     setUser(null);
   };
@@ -96,16 +100,16 @@ export const AuthProvider = ({ children }) => {
   // Get current user profile
   const getCurrentUser = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        return { success: false, error: 'No token found' };
+        return { success: false, error: "No token found" };
       }
 
       const response = await fetch(`${API_URL}/auth/me`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
@@ -120,24 +124,24 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: data.message };
       }
     } catch (error) {
-      console.error('Get current user error:', error);
-      return { success: false, error: 'Network error' };
+      console.error("Get current user error:", error);
+      return { success: false, error: "Network error" };
     }
   };
 
   // Update user profile
   const updateProfile = async (userData) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        return { success: false, error: 'No token found' };
+        return { success: false, error: "No token found" };
       }
 
       const response = await fetch(`${API_URL}/users/profile`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(userData),
       });
@@ -146,14 +150,14 @@ export const AuthProvider = ({ children }) => {
 
       if (data.success) {
         setUser(data.data);
-        localStorage.setItem('user', JSON.stringify(data.data));
+        localStorage.setItem("user", JSON.stringify(data.data));
         return { success: true, user: data.data };
       } else {
         return { success: false, error: data.message };
       }
     } catch (error) {
-      console.error('Update profile error:', error);
-      return { success: false, error: 'Network error' };
+      console.error("Update profile error:", error);
+      return { success: false, error: "Network error" };
     }
   };
 
@@ -165,12 +169,10 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     getCurrentUser,
-    updateProfile
+    updateProfile,
+    API_URL,
+    token,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
