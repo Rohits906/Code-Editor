@@ -102,11 +102,6 @@ const Layout = () => {
                 </h1>
               </div>
             )}
-            {isSidebarCollapsed && (
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mx-auto">
-                <Code className="w-6 h-6 text-white" />
-              </div>
-            )}
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
@@ -213,7 +208,7 @@ const Layout = () => {
           <div className="flex items-center justify-between">
             
             {/* Left: Search */}
-            <div className="flex-1 max-w-2xl">
+            <div className="flex-1 max-w-md">
               <div className="relative">
                 <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
                 <input

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './Components/Home.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import Dashboard from './Components/Dashboard.jsx';
+import Projects from './Components/Projects.jsx';
 import ProtectedRoute from './Components/ProtectedRoute.jsx';
 import Login from './Components/Auth/Login.jsx';
 import Register from './Components/Auth/Register.jsx';
@@ -25,6 +26,7 @@ const App = () => {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/projects" element={<Projects />} />
               {/* Add other protected routes here */}
             </Route>
           </Routes>
