@@ -105,7 +105,7 @@ const Login = () => {
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur opacity-75"></div>
-                  <img src="/assests/codeflow_logo.png" alt="CodeFlow Logo" className="relative w-8 h-8 md:w-10 md:h-10" />
+                  <img src="/assests/codeflow_icon.png" alt="CodeFlow Icon" className="relative w-8 h-8 md:w-10 md:h-10" />
                 </div>
                 <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                   CodeFlow

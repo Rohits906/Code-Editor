@@ -166,12 +166,12 @@ const Layout = () => {
                 }`}
               >
                 <img
-                  src="/assests/codeflow_logo.png"
-                  alt="CodeFlow Logo"
-                  className="w-6 h-6"
+                  src="/assests/codeflow_icon.png"
+                  alt="CodeFlow Icon"
+                  className="w-6 h-6 md:w-8 md:h-8"
                 />
               </div>
-              <span className="font-bold text-lg bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+              <span className="font-bold text-lg from-blue-500 to-purple-500 bg-clip-text text-transparent">
                 CodeFlow
               </span>
             </div>
@@ -265,8 +265,8 @@ const Layout = () => {
                       }`}
                     >
                       <img
-                        src="/assests/codeflow_logo.png"
-                        alt="CodeFlow Logo"
+                        src="/assests/codeflow_icon.png"
+                        alt="CodeFlow Icon"
                         className="w-6 h-6"
                       />
                     </div>
@@ -462,14 +462,14 @@ const Layout = () => {
           <div className="flex items-center justify-between">
             {!isSidebarCollapsed && (
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                <div className="p-2 from-blue-500 to-purple-600 rounded-lg">
                   <img
-                    src="/assests/codeflow_logo.png"
-                    alt="CodeFlow Logo"
-                    className="w-8 h-8"
+                    src="/assests/codeflow_icon.png"
+                    alt="CodeFlow Icon"
+                    className="w-8 h-8 md:w-10"
                   />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   CodeFlow
                 </h1>
               </div>
@@ -579,7 +579,7 @@ const Layout = () => {
               isSidebarCollapsed ? "justify-center" : ""
             }`}
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full from-blue-500 to-purple-600 flex items-center justify-center">
               <User className="w-6 h-6 text-white" />
             </div>
             {!isSidebarCollapsed && (
@@ -751,7 +751,7 @@ const Layout = () => {
                       : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full from-blue-500 to-purple-600 flex items-center justify-center">
                     <User className="w-4 h-4 text-white" />
                   </div>
                   <div className="text-left">

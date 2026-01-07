@@ -147,18 +147,18 @@ const Register = () => {
               variants={itemVariants}
               className="space-y-4 md:space-y-6"
             >
-              <motion.div
+              <motion.div 
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center justify-center"
+                className="flex items-center space-x-2 md:space-x-3"
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur opacity-75"></div>
-                  <img
-                    src="/assests/codeflow_logo.png"
-                    alt="CodeFlow Logo"
-                    className="relative w-12 h-12 md:w-16 md:h-16"
-                  />
+                  <img src="/assests/codeflow_icon.png" alt="CodeFlow Icon" className="relative w-8 h-8 md:w-10 md:h-10" />
                 </div>
+                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                  CodeFlow
+                </span>
+                <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
               </motion.div>
 
               <div className="space-y-3 md:space-y-4">

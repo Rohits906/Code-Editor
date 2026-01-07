@@ -134,13 +134,18 @@ const Home = () => {
           <div className="flex justify-between items-center">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="flex items-center space-x-3"
+              className="flex items-center space-x-1"
             >
+              <div className="flex items-center">
               <img
-                src="/assests/codeflow_logo.png"
+                src="/assests/codeflow_icon.png"
                 alt="CodeFlow Logo"
-                className="w-6 h-6"
+                className="h-10 w-auto"
               />
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                CodeFlow
+              </span>
+            </div>
             </motion.div>
 
             {/* Desktop Navigation */}
@@ -543,15 +548,15 @@ const Home = () => {
         viewport={{ once: true }}
         className="relative z-10 pt-12 pb-8 border-t border-gray-800/50"
       >
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+        <div className="container mx-auto px-2">
+          <div className="flex flex-col justify-between items-center gap-6 mb-4">
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl blur opacity-75"></div>
                 <img
-                  src="/assests/codeflow_logo.png"
+                  src="/assests/codeflow_icon.png"
                   alt="CodeFlow Logo"
-                  className="relative w-6 h-6"
+                  className="relative w-6 h-6 md:w-8 md:h-8"
                 />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
