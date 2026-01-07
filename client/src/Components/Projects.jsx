@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
@@ -9,8 +8,7 @@ import {
   Folder, 
   FileText, 
   Play, 
-  Save, 
-  Trash2, 
+  Save,
   Plus, 
   Search, 
   Code,
@@ -20,43 +18,15 @@ import {
   RefreshCw,
   Menu,
   ChevronRight,
-  Download,
-  Upload,
-  Share2,
-  Settings,
-  MoreVertical,
-  Check,
-  AlertCircle,
-  Zap,
-  Cpu,
-  Clock,
-  Star,
-  Users,
-  FilePlus,
-  FolderPlus,
-  GitBranch,
-  History,
-  Maximize2,
-  Minimize2,
   Eye,
   EyeOff,
-  Filter,
-  ChevronDown,
-  ChevronUp,
-  Edit,
-  Home,
   ArrowLeft,
-  User,
-  Bell,
-  Sun,
-  Moon,
-  LogOut
 } from 'lucide-react';
 import { FaPython, FaJs, FaJava, FaHtml5, FaCss3Alt, FaReact } from 'react-icons/fa';
-import { SiTypescript, SiCplusplus, SiC } from 'react-icons/si';
+import { SiTypescript } from 'react-icons/si';
 
 const Projects = () => {
-  const { API_URL, user, token } = useAuth();
+  const { API_URL, token } = useAuth();
   const { theme } = useTheme();
   
   // State for projects and files
@@ -77,20 +47,16 @@ const Projects = () => {
   // Modal states
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showFileModal, setShowFileModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [modalMode, setModalMode] = useState('create');
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   
   // UI states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('all');
   const [isMobile, setIsMobile] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const [showMobileFiles, setShowMobileFiles] = useState(false);
+  const [showProjectSidebar, setShowProjectSidebar] = useState(false);
+  const [showFilesSidebar, setShowFilesSidebar] = useState(false);
   const [showOutput, setShowOutput] = useState(true);
   const [editorLanguage, setEditorLanguage] = useState('javascript');
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
   
   // Form states
   const [projectForm, setProjectForm] = useState({
@@ -109,14 +75,15 @@ const Projects = () => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (mobile) {
-        setShowMobileFiles(false);
+      // On desktop, show project sidebar by default when no project selected
+      if (!mobile && !currentProject) {
+        setShowProjectSidebar(true);
       }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [currentProject]);
   
   // Languages supported
   const languages = [
@@ -140,16 +107,6 @@ const Projects = () => {
     { id: 'json', name: 'JSON', extension: '.json', monacoLang: 'json', icon: FileText, color: 'text-green-500' },
     { id: 'txt', name: 'Text', extension: '.txt', monacoLang: 'plaintext', icon: FileText, color: 'text-gray-500' }
   ];
-
-  // Mock notifications
-  const notifications = [
-    { id: 1, title: 'Project Shared', message: 'Sarah shared "E-commerce Dashboard" with you', time: '5 min ago', read: false },
-    { id: 2, title: 'Code Review', message: 'Mike requested a review on "API Integration"', time: '1 hour ago', read: false },
-    { id: 3, title: 'Execution Complete', message: 'Python script "data_analysis.py" ran successfully', time: '2 hours ago', read: true },
-    { id: 4, title: 'Storage Warning', message: 'You\'ve used 80% of your storage', time: '1 day ago', read: true },
-  ];
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Fetch projects on mount
   useEffect(() => {
@@ -360,11 +317,11 @@ const Projects = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const mockOutput = `Executing ${currentFile?.name || 'code'}...
-> Hello World!
-> Execution completed successfully!
-Time: 0.123s
-Memory: 45.6 MB`;
-      
+      > Hello World!
+      > Execution completed successfully!
+      Time: 0.123s
+      Memory: 45.6 MB`;
+            
       setOutput(mockOutput);
       toast.success('Code executed successfully!');
     } catch (error) {
@@ -397,7 +354,15 @@ Memory: 45.6 MB`;
     setCode('');
     setOutput('');
     await fetchProjectFiles(project._id);
-    if (isMobile) setShowMobileSidebar(false);
+    // On mobile, close project sidebar when project is selected
+    if (isMobile) {
+      setShowProjectSidebar(false);
+      // Show files sidebar on mobile when project is selected
+      setShowFilesSidebar(false);
+    } else {
+      // On desktop, automatically show files sidebar
+      setShowFilesSidebar(true);
+    }
   };
 
   const selectFile = async (file) => {
@@ -405,7 +370,8 @@ Memory: 45.6 MB`;
     setCode(file.content || getDefaultCode(file.type));
     const fileType = fileTypes.find(t => t.id === file.type);
     setEditorLanguage(fileType?.monacoLang || 'javascript');
-    if (isMobile) setShowMobileFiles(false);
+    // On mobile, close files sidebar when file is selected
+    if (isMobile) setShowFilesSidebar(false);
   };
 
   const copyToClipboard = () => {
@@ -437,65 +403,76 @@ Memory: 45.6 MB`;
       {/* Main Container */}
       <div className={`h-screen flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} overflow-hidden`}>
         
-        {/* Top Header - Always visible */}
+        {/* Top Header */}
         <header className={`sticky top-0 z-30 border-b ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="px-4 py-3">
             <div className="flex items-center justify-between">
-              {/* Left side - Menu button and title */}
+              {/* Left side - Project menu button */}
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+                  onClick={() => setShowProjectSidebar(!showProjectSidebar)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title={showProjectSidebar ? "Hide projects" : "Show projects"}
                 >
-                  <Menu className="w-5 h-5" />
+                  <Folder className="w-5 h-5" />
                 </button>
                 <div className="flex items-center space-x-2">
                   <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
                     <Code className="w-5 h-5 text-blue-500" />
                   </div>
-                  <span className="font-bold text-lg bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                    CodeFlow
+                  <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
+                    Projects
                   </span>
                 </div>
               </div>
 
+              {/* Center - Search on desktop */}
+              {!isMobile && (
+                <div className="flex-1 max-w-xl mx-8">
+                  <div className="relative">
+                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
+                    <input
+                      type="search"
+                      placeholder="Search projects..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        theme === 'dark' 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'border-gray-300 text-gray-900 placeholder-gray-500'
+                      }`}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Right side - Actions */}
               <div className="flex items-center space-x-2">
                 {!isMobile && (
-                  <>
-                    <div className="relative hidden md:block">
-                      <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                      <input
-                        type="search"
-                        placeholder="Search projects..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className={`w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          theme === 'dark' 
-                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                            : 'border-gray-300 text-gray-900 placeholder-gray-500'
-                        }`}
-                      />
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setShowProjectModal(true)}
-                      className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>New Project</span>
-                    </motion.button>
-                  </>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowProjectModal(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>New Project</span>
+                  </motion.button>
                 )}
                 
                 {isMobile && (
                   <>
                     <button
-                      onClick={() => setShowMobileSearch(!showMobileSearch)}
+                      onClick={() => {
+                        if (currentProject) {
+                          setShowFilesSidebar(!showFilesSidebar);
+                        } else {
+                          setShowProjectSidebar(!showProjectSidebar);
+                        }
+                      }}
                       className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
-                      <Search className="w-5 h-5" />
+                      <Menu className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => setShowProjectModal(true)}
@@ -518,6 +495,7 @@ Memory: 45.6 MB`;
                     onClick={() => {
                       setCurrentProject(null);
                       setCurrentFile(null);
+                      setShowFilesSidebar(false);
                     }}
                     className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
@@ -532,15 +510,6 @@ Memory: 45.6 MB`;
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  {isMobile && (
-                    <button
-                      onClick={() => setShowMobileFiles(!showMobileFiles)}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                      title="Files"
-                    >
-                      <FileText className="w-5 h-5" />
-                    </button>
-                  )}
                   <button
                     onClick={handleRunCode}
                     disabled={loading.execution}
@@ -578,63 +547,30 @@ Memory: 45.6 MB`;
           )}
         </header>
 
-        {/* Mobile Search Overlay */}
-        <AnimatePresence>
-          {isMobile && showMobileSearch && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={`fixed top-0 left-0 right-0 z-40 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} border-b p-4`}
-            >
-              <div className="flex items-center space-x-3">
-                <Search className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`} />
-                <input
-                  type="search"
-                  placeholder="Search projects..."
-                  className={`flex-1 py-2 focus:outline-none ${theme === 'dark' ? 'bg-gray-800 text-white' : 'text-gray-900'}`}
-                  autoFocus
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+        {/* Main Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Project Sidebar - Shows when no project is selected */}
+          {(!currentProject || showProjectSidebar) && (
+            <div className={`${isMobile ? 'fixed inset-0 z-40' : 'relative'} ${showProjectSidebar ? 'block' : 'hidden'} md:block`}>
+              {isMobile && showProjectSidebar && (
+                <div 
+                  className="fixed inset-0 bg-black/50"
+                  onClick={() => setShowProjectSidebar(false)}
                 />
-                <button
-                  onClick={() => setShowMobileSearch(false)}
-                  className="p-2"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Mobile Sidebar Menu */}
-        <AnimatePresence>
-          {showMobileSidebar && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 z-40"
-                onClick={() => setShowMobileSidebar(false)}
-              />
-              <motion.div
-                initial={{ x: -300 }}
-                animate={{ x: 0 }}
-                exit={{ x: -300 }}
-                className={`fixed top-0 left-0 bottom-0 w-80 z-50 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} border-r ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
-              >
+              )}
+              <div className={`${isMobile ? 'fixed top-0 left-0 bottom-0 w-80 z-50' : 'w-80 h-full'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r`}>
                 <div className="h-full flex flex-col">
                   {/* Sidebar Header */}
                   <div className="p-4 border-b flex items-center justify-between">
-                    <h2 className="font-bold text-lg">Projects</h2>
-                    <button
-                      onClick={() => setShowMobileSidebar(false)}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+                    <h2 className="font-bold text-lg">All Projects</h2>
+                    {isMobile && (
+                      <button
+                        onClick={() => setShowProjectSidebar(false)}
+                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Language Filter */}
@@ -727,250 +663,85 @@ Memory: 45.6 MB`;
                     )}
                   </div>
                 </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Desktop Sidebar - Only show on desktop when no project selected */}
-          {!isMobile && !currentProject && (
-            <div className={`w-80 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r`}>
-              <div className="h-full flex flex-col">
-                {/* Language Filter */}
-                <div className="p-6 border-b">
-                  <div className="flex flex-wrap gap-2">
-                    {languages.map((lang) => {
-                      const Icon = lang.icon;
-                      return (
-                        <motion.button
-                          key={lang.id}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setSelectedLanguage(lang.id)}
-                          className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center space-x-2 ${
-                            selectedLanguage === lang.id
-                              ? theme === 'dark'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-blue-100 text-blue-700'
-                              : theme === 'dark'
-                                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          {typeof Icon === 'function' ? (
-                            <Icon className="w-3 h-3" />
-                          ) : (
-                            React.createElement(Icon, { className: "w-3 h-3" })
-                          )}
-                          <span>{lang.name}</span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Projects List */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  {loading.projects ? (
-                    <div className="flex justify-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                    </div>
-                  ) : filteredProjects.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Folder className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400">No projects found</p>
-                      <button
-                        onClick={() => setShowProjectModal(true)}
-                        className="mt-3 text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium"
-                      >
-                        Create your first project
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {filteredProjects.map((project) => {
-                        const lang = languages.find(l => l.id === project.language);
-                        const Icon = lang?.icon || Code;
-                        return (
-                          <motion.div
-                            key={project._id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            whileHover={{ scale: 1.02 }}
-                            onClick={() => selectProject(project)}
-                            className={`p-4 rounded-xl cursor-pointer border transition-all ${
-                              currentProject?._id === project._id
-                                ? theme === 'dark'
-                                  ? 'bg-blue-900/30 border-blue-700'
-                                  : 'bg-blue-50 border-blue-300'
-                                : theme === 'dark'
-                                  ? 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
-                                  : 'bg-white border-gray-200 hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                                {typeof Icon === 'function' ? (
-                                  <Icon className={`w-5 h-5 ${lang?.color}`} />
-                                ) : (
-                                  React.createElement(Icon, { className: `w-5 h-5 ${lang?.color}` })
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold truncate">{project.name}</h3>
-                                <p className={`text-sm mt-1 truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  {project.description || 'No description'}
-                                </p>
-                              </div>
-                              <ChevronRight className="w-4 h-4 text-gray-400" />
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           )}
 
-          {/* Desktop Files Sidebar - Only show when project is selected */}
-          {!isMobile && currentProject && (
-            <div className={`w-64 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r`}>
-              <div className="h-full flex flex-col">
-                <div className="p-6 border-b">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Files</h3>
-                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {files.length} files
-                    </span>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-6">
-                  {loading.files ? (
-                    <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                    </div>
-                  ) : files.length === 0 ? (
-                    <div className="text-center py-8">
-                      <FileText className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">No files yet</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {files.map((file) => {
-                        const fileType = fileTypes.find(t => t.id === file.type);
-                        const Icon = fileType?.icon || FileText;
-                        return (
-                          <motion.button
-                            key={file._id}
-                            whileHover={{ x: 4 }}
-                            onClick={() => selectFile(file)}
-                            className={`w-full text-left px-3 py-3 rounded-lg flex items-center justify-between ${
-                              currentFile?._id === file._id
-                                ? theme === 'dark'
-                                  ? 'bg-blue-900/30 text-white'
-                                  : 'bg-blue-50 text-blue-700'
-                                : theme === 'dark'
-                                  ? 'hover:bg-gray-700 text-gray-300'
-                                  : 'hover:bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            <div className="flex items-center space-x-3 flex-1 min-w-0">
-                              {typeof Icon === 'function' ? (
-                                <Icon className={`w-4 h-4 ${fileType?.color}`} />
-                              ) : (
-                                React.createElement(Icon, { className: `w-4 h-4 ${fileType?.color}` })
-                              )}
-                              <span className="truncate">{file.name}</span>
-                            </div>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Mobile Files Sidebar */}
-          <AnimatePresence>
-            {isMobile && currentProject && showMobileFiles && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/50 z-40"
-                  onClick={() => setShowMobileFiles(false)}
+          {/* Files Sidebar - Shows when project is selected */}
+          {currentProject && (!isMobile || showFilesSidebar) && (
+            <div className={`${isMobile ? 'fixed inset-0 z-40' : 'relative'} ${showFilesSidebar ? 'block' : 'hidden'} md:block`}>
+              {isMobile && showFilesSidebar && (
+                <div 
+                  className="fixed inset-0 bg-black/50"
+                  onClick={() => setShowFilesSidebar(false)}
                 />
-                <motion.div
-                  initial={{ x: -300 }}
-                  animate={{ x: 0 }}
-                  exit={{ x: -300 }}
-                  className={`fixed top-0 left-0 bottom-0 w-80 z-50 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} border-r ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}
-                >
-                  <div className="h-full flex flex-col">
-                    <div className="p-4 border-b flex items-center justify-between">
-                      <h2 className="font-bold text-lg">Files</h2>
-                      <button
-                        onClick={() => setShowMobileFiles(false)}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4">
-                      {loading.files ? (
-                        <div className="flex justify-center py-8">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                        </div>
-                      ) : files.length === 0 ? (
-                        <div className="text-center py-8">
-                          <FileText className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                          <p className="text-gray-500 dark:text-gray-400 text-sm">No files yet</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {files.map((file) => {
-                            const fileType = fileTypes.find(t => t.id === file.type);
-                            const Icon = fileType?.icon || FileText;
-                            return (
-                              <button
-                                key={file._id}
-                                onClick={() => selectFile(file)}
-                                className={`w-full text-left px-3 py-3 rounded-lg flex items-center justify-between ${
-                                  currentFile?._id === file._id
-                                    ? theme === 'dark'
-                                      ? 'bg-blue-900/30 text-white'
-                                      : 'bg-blue-50 text-blue-700'
-                                    : theme === 'dark'
-                                      ? 'hover:bg-gray-700 text-gray-300'
-                                      : 'hover:bg-gray-100 text-gray-700'
-                                }`}
-                              >
-                                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                  {typeof Icon === 'function' ? (
-                                    <Icon className={`w-4 h-4 ${fileType?.color}`} />
-                                  ) : (
-                                    React.createElement(Icon, { className: `w-4 h-4 ${fileType?.color}` })
-                                  )}
-                                  <span className="truncate">{file.name}</span>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
+              )}
+              <div className={`${isMobile ? 'fixed top-0 right-0 bottom-0 w-80 z-50' : 'w-64 h-full'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r`}>
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b flex items-center justify-between">
+                    <h3 className="font-semibold">Files</h3>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {files.length} files
+                      </span>
+                      {isMobile && (
+                        <button
+                          onClick={() => setShowFilesSidebar(false)}
+                          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
                       )}
                     </div>
                   </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+                  <div className="flex-1 overflow-y-auto p-4">
+                    {loading.files ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : files.length === 0 ? (
+                      <div className="text-center py-8">
+                        <FileText className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">No files yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {files.map((file) => {
+                          const fileType = fileTypes.find(t => t.id === file.type);
+                          const Icon = fileType?.icon || FileText;
+                          return (
+                            <motion.button
+                              key={file._id}
+                              whileHover={{ x: 4 }}
+                              onClick={() => selectFile(file)}
+                              className={`w-full text-left px-3 py-3 rounded-lg flex items-center justify-between ${
+                                currentFile?._id === file._id
+                                  ? theme === 'dark'
+                                    ? 'bg-blue-900/30 text-white'
+                                    : 'bg-blue-50 text-blue-700'
+                                  : theme === 'dark'
+                                    ? 'hover:bg-gray-700 text-gray-300'
+                                    : 'hover:bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                {typeof Icon === 'function' ? (
+                                  <Icon className={`w-4 h-4 ${fileType?.color}`} />
+                                ) : (
+                                  React.createElement(Icon, { className: `w-4 h-4 ${fileType?.color}` })
+                                )}
+                                <span className="truncate">{file.name}</span>
+                              </div>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Editor Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -1077,13 +848,13 @@ Memory: 45.6 MB`;
                         <div className="flex flex-col sm:flex-row gap-3 justify-center">
                           <button
                             onClick={() => setShowFileModal(true)}
-                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+                            className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
                           >
                             Create New File
                           </button>
                           {isMobile && (
                             <button
-                              onClick={() => setShowMobileFiles(true)}
+                              onClick={() => setShowFilesSidebar(true)}
                               className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                             >
                               Browse Files
@@ -1107,7 +878,7 @@ Memory: 45.6 MB`;
                   }`}>
                     <Code className="w-12 h-12 text-gray-400" />
                   </div>
-                  <h3 className="text-2xl font-semibold mb-3">Welcome to CodeFlow Projects</h3>
+                  <h3 className="text-2xl font-semibold mb-3">Welcome to Projects</h3>
                   <p className={`mb-8 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                     Create projects, write code, and execute programs in multiple languages. 
                     Everything is saved in the cloud and accessible from anywhere.
@@ -1117,19 +888,17 @@ Memory: 45.6 MB`;
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setShowProjectModal(true)}
-                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+                      className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
                     >
                       <Plus className="w-5 h-5 inline mr-2" />
                       Create New Project
                     </motion.button>
-                    {isMobile && (
-                      <button
-                        onClick={() => setShowMobileSidebar(true)}
-                        className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        Browse Projects
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setShowProjectSidebar(true)}
+                      className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Browse Projects
+                    </button>
                   </div>
                 </motion.div>
               </div>
@@ -1242,7 +1011,7 @@ Memory: 45.6 MB`;
                     </button>
                     <button
                       onClick={handleCreateProject}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+                      className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
                     >
                       Create Project
                     </button>
@@ -1345,7 +1114,7 @@ Memory: 45.6 MB`;
                     </button>
                     <button
                       onClick={handleCreateFile}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
+                      className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity"
                     >
                       Create File
                     </button>
