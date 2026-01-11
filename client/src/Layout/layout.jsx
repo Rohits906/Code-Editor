@@ -341,17 +341,18 @@ const Layout = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 z-40"
+                className="fixed inset-0 bg-black/50 z-50"
                 onClick={() => setShowNotifications(false)}
               />
               <motion.div
                 initial={{ y: 300 }}
                 animate={{ y: 0 }}
                 exit={{ y: 300 }}
+                onClick={(e) => e.stopPropagation()}
                 className={`fixed bottom-0 left-0 right-0 z-50 ${
-                  theme === "dark" ? "bg-gray-800" : "bg-white"
+                  theme === 'dark' ? 'bg-gray-800' : 'bg-white'
                 } rounded-t-2xl border-t ${
-                  theme === "dark" ? "border-gray-700" : "border-gray-200"
+                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
                 }`}
               >
                 <div className="p-4 border-b flex items-center justify-between">
@@ -369,12 +370,12 @@ const Layout = () => {
                       key={notification.id}
                       className={`p-3 rounded-lg mb-2 ${
                         !notification.read
-                          ? theme === "dark"
-                            ? "bg-blue-900/20"
-                            : "bg-blue-50"
-                          : theme === "dark"
-                          ? "bg-gray-700/50"
-                          : "bg-gray-50"
+                          ? theme === 'dark'
+                            ? 'bg-blue-900/20'
+                            : 'bg-blue-50'
+                          : theme === 'dark'
+                          ? 'bg-gray-700/50'
+                          : 'bg-gray-50'
                       }`}
                     >
                       <div className="flex justify-between items-start">
@@ -383,7 +384,7 @@ const Layout = () => {
                         </h4>
                         <span
                           className={`text-xs ${
-                            theme === "dark" ? "text-gray-400" : "text-gray-500"
+                            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
                           }`}
                         >
                           {notification.time}
@@ -391,7 +392,7 @@ const Layout = () => {
                       </div>
                       <p
                         className={`text-sm mt-1 ${
-                          theme === "dark" ? "text-gray-300" : "text-gray-600"
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                         }`}
                       >
                         {notification.message}
@@ -461,15 +462,15 @@ const Layout = () => {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             {!isSidebarCollapsed && (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center">
                 <div className="p-2 from-blue-500 to-purple-600 rounded-lg">
                   <img
                     src="/assests/codeflow_icon.png"
                     alt="CodeFlow Icon"
-                    className="w-8 h-8 md:w-10"
+                    className="w-8 h-8"
                   />
                 </div>
-                <h1 className="text-2xl font-bold from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold from-blue-600 to-purple-600 bg-clip-text">
                   CodeFlow
                 </h1>
               </div>
@@ -668,31 +669,32 @@ const Layout = () => {
                 </button>
 
                 {/* Notifications Dropdown */}
-                <AnimatePresence>
+                 <AnimatePresence>
                   {showNotifications && (
                     <>
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-40"
+                        className="fixed inset-0 z-50"
                         onClick={() => setShowNotifications(false)}
                       />
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        onClick={(e) => e.stopPropagation()}
                         className={`absolute right-0 mt-2 w-80 rounded-xl shadow-lg border py-2 z-50 ${
-                          theme === "dark"
-                            ? "bg-gray-800 border-gray-700"
-                            : "bg-white border-gray-200"
+                          theme === 'dark'
+                            ? 'bg-gray-800 border-gray-700'
+                            : 'bg-white border-gray-200'
                         }`}
                       >
                         <div
                           className={`px-4 py-2 border-b ${
-                            theme === "dark"
-                              ? "border-gray-700"
-                              : "border-gray-200"
+                            theme === 'dark'
+                              ? 'border-gray-700'
+                              : 'border-gray-200'
                           }`}
                         >
                           <h3 className="font-semibold">Notifications</h3>
@@ -703,10 +705,10 @@ const Layout = () => {
                               key={notification.id}
                               className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer ${
                                 !notification.read
-                                  ? theme === "dark"
-                                    ? "bg-blue-900/20"
-                                    : "bg-blue-50"
-                                  : ""
+                                  ? theme === 'dark'
+                                    ? 'bg-blue-900/20'
+                                    : 'bg-blue-50'
+                                  : ''
                               }`}
                             >
                               <div className="flex justify-between items-start">
@@ -715,9 +717,9 @@ const Layout = () => {
                                 </h4>
                                 <span
                                   className={`text-xs ${
-                                    theme === "dark"
-                                      ? "text-gray-400"
-                                      : "text-gray-500"
+                                    theme === 'dark'
+                                      ? 'text-gray-400'
+                                      : 'text-gray-500'
                                   }`}
                                 >
                                   {notification.time}
@@ -725,9 +727,9 @@ const Layout = () => {
                               </div>
                               <p
                                 className={`text-sm mt-1 ${
-                                  theme === "dark"
-                                    ? "text-gray-300"
-                                    : "text-gray-600"
+                                  theme === 'dark'
+                                    ? 'text-gray-300'
+                                    : 'text-gray-600'
                                 }`}
                               >
                                 {notification.message}
@@ -741,14 +743,14 @@ const Layout = () => {
                 </AnimatePresence>
               </div>
 
-              {/* User Profile */}
+              {/* User Profile - FIXED */}
               <div className="relative">
                 <button
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
                   className={`flex items-center space-x-3 rounded-xl px-3 py-2 ${
-                    theme === "dark"
-                      ? "bg-gray-700/50 hover:bg-gray-700 border border-gray-600"
-                      : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
+                    theme === 'dark'
+                      ? 'bg-gray-700/50 hover:bg-gray-700 border border-gray-600'
+                      : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full from-blue-500 to-purple-600 flex items-center justify-center">
@@ -760,7 +762,7 @@ const Layout = () => {
                     </div>
                     <div
                       className={`text-xs ${
-                        theme === "dark" ? "text-gray-400" : "text-gray-500"
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
                       } truncate max-w-[120px]`}
                     >
                       {user?.email}
@@ -768,7 +770,7 @@ const Layout = () => {
                   </div>
                 </button>
 
-                {/* User Dropdown */}
+                {/* User Dropdown - FIXED */}
                 <AnimatePresence>
                   {showUserDropdown && (
                     <>
@@ -783,10 +785,11 @@ const Layout = () => {
                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                        onClick={(e) => e.stopPropagation()}
                         className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg border py-2 z-50 ${
-                          theme === "dark"
-                            ? "bg-gray-800 border-gray-700"
-                            : "bg-white border-gray-200"
+                          theme === 'dark'
+                            ? 'bg-gray-800 border-gray-700'
+                            : 'bg-white border-gray-200'
                         }`}
                       >
                         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
@@ -795,9 +798,9 @@ const Layout = () => {
                           </div>
                           <div
                             className={`text-sm ${
-                              theme === "dark"
-                                ? "text-gray-400"
-                                : "text-gray-500"
+                              theme === 'dark'
+                                ? 'text-gray-400'
+                                : 'text-gray-500'
                             }`}
                           >
                             {user?.email}
@@ -807,9 +810,9 @@ const Layout = () => {
                           <Link
                             to="/profile"
                             className={`flex items-center px-4 py-2 text-sm ${
-                              theme === "dark"
-                                ? "hover:bg-gray-700 text-gray-300"
-                                : "hover:bg-gray-100 text-gray-700"
+                              theme === 'dark'
+                                ? 'hover:bg-gray-700 text-gray-300'
+                                : 'hover:bg-gray-100 text-gray-700'
                             }`}
                             onClick={() => setShowUserDropdown(false)}
                           >
@@ -819,9 +822,9 @@ const Layout = () => {
                           <Link
                             to="/settings"
                             className={`flex items-center px-4 py-2 text-sm ${
-                              theme === "dark"
-                                ? "hover:bg-gray-700 text-gray-300"
-                                : "hover:bg-gray-100 text-gray-700"
+                              theme === 'dark'
+                                ? 'hover:bg-gray-700 text-gray-300'
+                                : 'hover:bg-gray-100 text-gray-700'
                             }`}
                             onClick={() => setShowUserDropdown(false)}
                           >
@@ -831,17 +834,17 @@ const Layout = () => {
                         </div>
                         <div
                           className={`border-t pt-1 ${
-                            theme === "dark"
-                              ? "border-gray-700"
-                              : "border-gray-200"
+                            theme === 'dark'
+                              ? 'border-gray-700'
+                              : 'border-gray-200'
                           }`}
                         >
                           <button
                             onClick={handleLogout}
                             className={`flex items-center w-full px-4 py-2 text-sm ${
-                              theme === "dark"
-                                ? "hover:bg-red-900/30 text-red-400"
-                                : "hover:bg-red-50 text-red-600"
+                              theme === 'dark'
+                                ? 'hover:bg-red-900/30 text-red-400'
+                                : 'hover:bg-red-50 text-red-600'
                             }`}
                           >
                             <LogOut className="w-4 h-4 mr-3" />

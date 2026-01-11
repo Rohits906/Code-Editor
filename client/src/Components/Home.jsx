@@ -134,18 +134,16 @@ const Home = () => {
           <div className="flex justify-between items-center">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="flex items-center space-x-1"
+              className="flex items-center justify-center space-x-1"
             >
-              <div className="flex items-center">
               <img
                 src="/assests/codeflow_icon.png"
                 alt="CodeFlow Logo"
-                className="h-10 w-auto"
+                className="h-10 w-10"
               />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                 CodeFlow
               </span>
-            </div>
             </motion.div>
 
             {/* Desktop Navigation */}
@@ -159,7 +157,7 @@ const Home = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2 rounded-lg border border-gray-700 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
+                    className="px-5 py-2 cursor-pointer rounded-lg border border-gray-700 hover:border-blue-500 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
                   >
                     Sign In
                   </motion.button>
@@ -168,7 +166,7 @@ const Home = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/30"
+                    className="px-5 py-2 cursor-pointer rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/30"
                   >
                     Get Started
                   </motion.button>

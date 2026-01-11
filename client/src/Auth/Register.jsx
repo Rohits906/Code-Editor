@@ -1,46 +1,65 @@
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
-import { Code, Eye, EyeOff, Github, Chrome, Mail, Lock, ArrowRight, Sparkles, Zap, Users, Folder } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  Code,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowRight,
+  User,
+  Sparkles,
+  Zap,
+  Users,
+  Folder,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-const Login = () => {
+const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
   });
 
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const result = await login(formData.email, formData.password);
-      
+      const result = await register(
+        formData.firstName,
+        formData.lastName,
+        formData.email,
+        formData.password
+      );
+
       if (result.success) {
-        console.log('✅ Login successful! Redirecting to dashboard...');
-        navigate('/dashboard');
+        console.log("✅ Registration successful! Redirecting to dashboard...");
+        navigate("/dashboard");
       } else {
         setError(result.error);
       }
     } catch (err) {
-      console.error('Auth error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      console.error("Registration error:", err);
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -51,9 +70,9 @@ const Login = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
@@ -62,21 +81,48 @@ const Login = () => {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 0.5
-      }
-    }
+        duration: 0.5,
+      },
+    },
   };
 
   const features = [
-    { icon: <Zap className="w-3 h-3 md:w-4 md:h-4" />, text: "Access 10+ languages", color: "text-yellow-400" },
-    { icon: <Users className="w-3 h-3 md:w-4 md:h-4" />, text: "Real-time collaboration", color: "text-blue-400" },
-    { icon: <Folder className="w-3 h-3 md:w-4 md:h-4" />, text: "Cloud storage", color: "text-purple-400" }
+    {
+      icon: <Zap className="w-3 h-3 md:w-4 md:h-4" />,
+      text: "Access 10+ languages",
+      color: "text-yellow-400",
+    },
+    {
+      icon: <Users className="w-3 h-3 md:w-4 md:h-4" />,
+      text: "Real-time collaboration",
+      color: "text-blue-400",
+    },
+    {
+      icon: <Folder className="w-3 h-3 md:w-4 md:h-4" />,
+      text: "Cloud storage",
+      color: "text-purple-400",
+    },
   ];
 
   const stats = [
-    { value: "10+", label: "Languages", color: "text-cyan-400", icon: <Code className="w-3 h-3 md:w-4 md:h-4" /> },
-    { value: "200+", label: "Developers", color: "text-emerald-400", icon: <Users className="w-3 h-3 md:w-4 md:h-4" /> },
-    { value: "100+", label: "Projects", color: "text-purple-400", icon: <Folder className="w-3 h-3 md:w-4 md:h-4" /> }
+    {
+      value: "10+",
+      label: "Languages",
+      color: "text-cyan-400",
+      icon: <Code className="w-3 h-3 md:w-4 md:h-4" />,
+    },
+    {
+      value: "200+",
+      label: "Developers",
+      color: "text-emerald-400",
+      icon: <Users className="w-3 h-3 md:w-4 md:h-4" />,
+    },
+    {
+      value: "100+",
+      label: "Projects",
+      color: "text-purple-400",
+      icon: <Folder className="w-3 h-3 md:w-4 md:h-4" />,
+    },
   ];
 
   return (
@@ -96,9 +142,11 @@ const Login = () => {
             animate="visible"
             className="grid lg:grid-cols-2 gap-6 md:gap-8 items-center h-full"
           >
-            
             {/* Left Side - Branding & Info */}
-            <motion.div variants={itemVariants} className="space-y-4 md:space-y-6">
+            <motion.div
+              variants={itemVariants}
+              className="space-y-4 md:space-y-6"
+            >
               <motion.div 
                 whileHover={{ scale: 1.05 }}
                 className="flex items-center space-x-2 md:space-x-3"
@@ -114,32 +162,38 @@ const Login = () => {
               </motion.div>
 
               <div className="space-y-3 md:space-y-4">
-                <motion.h1 
+                <motion.h1
                   variants={itemVariants}
                   className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight"
                 >
-                  Welcome Back
+                  Join{" "}
                   <span className="block bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                    Developer
+                    CodeFlow
                   </span>
                 </motion.h1>
-                <motion.p 
+                <motion.p
                   variants={itemVariants}
                   className="text-sm md:text-base lg:text-lg text-gray-300 leading-relaxed"
                 >
-                  Sign in to access your projects and continue coding.
+                  Create your account to start coding, collaborate with
+                  developers.
                 </motion.p>
               </div>
 
               {/* Features List */}
-              <motion.div variants={itemVariants} className="space-y-2 md:space-y-3">
+              <motion.div
+                variants={itemVariants}
+                className="space-y-2 md:space-y-3"
+              >
                 {features.map((feature, index) => (
                   <motion.div
                     key={index}
                     whileHover={{ x: 5 }}
                     className="flex items-center space-x-2 text-gray-300"
                   >
-                    <div className={`p-1.5 md:p-2 rounded-lg bg-gray-800/50 ${feature.color}`}>
+                    <div
+                      className={`p-1.5 md:p-2 rounded-lg bg-gray-800/50 ${feature.color}`}
+                    >
                       {feature.icon}
                     </div>
                     <span className="text-xs md:text-sm">{feature.text}</span>
@@ -148,7 +202,7 @@ const Login = () => {
               </motion.div>
 
               {/* Stats */}
-              <motion.div 
+              <motion.div
                 variants={itemVariants}
                 className="grid grid-cols-3 gap-2 md:gap-3 pt-4 md:pt-6 border-t border-gray-800/30"
               >
@@ -159,10 +213,12 @@ const Login = () => {
                     className="text-center p-2 md:p-3 rounded-xl bg-gray-800/20 backdrop-blur-sm border border-gray-700/30"
                   >
                     <div className="flex items-center justify-center space-x-1 md:space-x-2 mb-1">
-                      <div className={`${stat.color}`}>
-                        {stat.icon}
+                      <div className={`${stat.color}`}>{stat.icon}</div>
+                      <div
+                        className={`text-base md:text-xl font-bold ${stat.color}`}
+                      >
+                        {stat.value}
                       </div>
-                      <div className={`text-base md:text-xl font-bold ${stat.color}`}>{stat.value}</div>
                     </div>
                     <div className="text-gray-400 text-xs">{stat.label}</div>
                   </motion.div>
@@ -170,15 +226,15 @@ const Login = () => {
               </motion.div>
             </motion.div>
 
-            {/* Right Side - Login Form */}
+            {/* Right Side - Registration Form */}
             <motion.div variants={itemVariants} className="relative">
               <div className="relative bg-gray-900/50 backdrop-blur-xl rounded-2xl md:rounded-3xl p-4 md:p-6 border border-gray-700/50 shadow-2xl">
                 <div className="text-center mb-4 md:mb-6">
                   <h2 className="text-xl md:text-2xl font-bold mb-1 md:mb-2">
-                    Sign In
+                    Create Account
                   </h2>
                   <p className="text-gray-400 text-xs md:text-sm">
-                    Enter your credentials
+                    Fill in your details
                   </p>
                 </div>
 
@@ -193,40 +249,54 @@ const Login = () => {
                   </motion.div>
                 )}
 
-                {/* Social Login Buttons */}
-                <div className="flex flex-col sm:flex-row gap-2 md:gap-3 mb-4 md:mb-6">
-                  <motion.button 
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button"
-                    className="flex-1 flex items-center justify-center space-x-1 md:space-x-2 bg-gray-800/50 backdrop-blur-sm hover:bg-gray-800/70 border border-gray-700 rounded-lg md:rounded-xl py-2 md:py-3 px-3 transition-all duration-300 hover:border-blue-500/50 text-xs md:text-sm"
-                  >
-                    <Chrome className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Google</span>
-                  </motion.button>
-                  <motion.button 
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="button"
-                    className="flex-1 flex items-center justify-center space-x-1 md:space-x-2 bg-gray-800/50 backdrop-blur-sm hover:bg-gray-800/70 border border-gray-700 rounded-lg md:rounded-xl py-2 md:py-3 px-3 transition-all duration-300 hover:border-purple-500/50 text-xs md:text-sm"
-                  >
-                    <Github className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>GitHub</span>
-                  </motion.button>
-                </div>
+                {/* Registration Form */}
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-3 md:space-y-4"
+                >
+                  {/* Name Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-300">
+                        First Name
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 md:w-4 md:h-4" />
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg md:rounded-xl pl-8 md:pl-10 pr-3 py-2 md:py-3 text-sm focus:outline-none focus:border-blue-500 transition-all duration-300"
+                          placeholder="John"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-gray-300">
+                        Last Name
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 md:w-4 md:h-4" />
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg md:rounded-xl pl-8 md:pl-10 pr-3 py-2 md:py-3 text-sm focus:outline-none focus:border-blue-500 transition-all duration-300"
+                          placeholder="Doe"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Divider */}
-                <div className="flex items-center mb-4 md:mb-6">
-                  <div className="flex-1 border-t border-gray-700/30"></div>
-                  <span className="px-2 md:px-3 text-gray-400 text-xs">OR</span>
-                  <div className="flex-1 border-t border-gray-700/30"></div>
-                </div>
-
-                {/* Login Form */}
-                <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
                   {/* Email Field */}
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-300">Email Address</label>
+                    <label className="text-xs font-medium text-gray-300">
+                      Email Address
+                    </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 md:w-4 md:h-4" />
                       <input
@@ -243,7 +313,9 @@ const Login = () => {
 
                   {/* Password Field */}
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-300">Password</label>
+                    <label className="text-xs font-medium text-gray-300">
+                      Password
+                    </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 md:w-4 md:h-4" />
                       <input
@@ -252,7 +324,7 @@ const Login = () => {
                         value={formData.password}
                         onChange={handleChange}
                         className="w-full bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg md:rounded-xl pl-8 md:pl-10 pr-8 md:pr-10 py-2 md:py-3 text-sm focus:outline-none focus:border-blue-500 transition-all duration-300"
-                        placeholder="Enter password"
+                        placeholder="Create password"
                         required
                       />
                       <button
@@ -260,26 +332,42 @@ const Login = () => {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-0.5"
                       >
-                        {showPassword ? <EyeOff className="w-3 h-3 md:w-4 md:h-4" /> : <Eye className="w-3 h-3 md:w-4 md:h-4" />}
+                        {showPassword ? (
+                          <EyeOff className="w-3 h-3 md:w-4 md:h-4" />
+                        ) : (
+                          <Eye className="w-3 h-3 md:w-4 md:h-4" />
+                        )}
                       </button>
                     </div>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Use 6+ characters
+                    </p>
                   </div>
 
-                  {/* Remember Me & Forgot Password */}
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center space-x-1 md:space-x-2">
-                      <input 
-                        type="checkbox" 
-                        className="w-3 h-3 bg-gray-800/50 border-gray-700 rounded focus:ring-blue-500 focus:ring-1 focus:ring-offset-1 focus:ring-offset-gray-900" 
-                      />
-                      <span className="text-xs text-gray-300">Remember me</span>
-                    </label>
-                    <Link to="/forgot-password">
-                      <button type="button" className="text-xs text-blue-500 hover:text-blue-400 transition-colors">
-                        Forgot password?
+                  {/* Terms Agreement */}
+                  <label className="flex items-start space-x-2">
+                    <input
+                      type="checkbox"
+                      className="w-3 h-3 mt-0.5 bg-gray-800/50 border-gray-700 rounded focus:ring-blue-500 focus:ring-1 focus:ring-offset-1 focus:ring-offset-gray-900"
+                      required
+                    />
+                    <span className="text-xs text-gray-300">
+                      I agree to{" "}
+                      <button
+                        type="button"
+                        className="text-blue-500 hover:text-blue-400 transition-colors"
+                      >
+                        Terms
+                      </button>{" "}
+                      &{" "}
+                      <button
+                        type="button"
+                        className="text-blue-500 hover:text-blue-400 transition-colors"
+                      >
+                        Privacy
                       </button>
-                    </Link>
-                  </div>
+                    </span>
+                  </label>
 
                   {/* Submit Button */}
                   <motion.button
@@ -292,26 +380,26 @@ const Login = () => {
                     {loading ? (
                       <>
                         <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Signing In...</span>
+                        <span>Creating Account...</span>
                       </>
                     ) : (
                       <>
-                        <span>Sign In</span>
+                        <span>Create Account</span>
                         <ArrowRight className="w-3 h-3 md:w-4 md:h-4" />
                       </>
                     )}
                   </motion.button>
                 </form>
 
-                {/* Register Link */}
+                {/* Login Link */}
                 <div className="text-center mt-4 md:mt-6 pt-4 border-t border-gray-700/30">
                   <p className="text-gray-400 text-xs md:text-sm">
-                    Don't have an account?{' '}
-                    <Link 
-                      to="/register"
+                    Already have an account?{" "}
+                    <Link
+                      to="/login"
                       className="text-blue-500 hover:text-blue-400 font-semibold transition-colors flex items-center justify-center space-x-1 mx-auto"
                     >
-                      <span>Create account</span>
+                      <span>Sign in</span>
                       <ArrowRight className="w-2 h-2 md:w-3 md:h-3" />
                     </Link>
                   </p>
@@ -329,4 +417,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
