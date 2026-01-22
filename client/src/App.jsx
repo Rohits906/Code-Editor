@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import Dashboard from './Components/Dashboard.jsx';
 import Projects from './Components/Projects.jsx';
 import ProtectedRoute from './Components/ProtectedRoute.jsx';
+import Shared from './Components/Shared.jsx';
 import Login from './Auth/Login.jsx';
 import Register from './Auth/Register.jsx';
 import Layout from './Layout/layout.jsx';
@@ -26,8 +27,9 @@ const App = () => {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/projects" element={<Projects />} />
-              {/* Add other protected routes here */}
+              <Route path="/projects/*" element={<Projects />} />
+              <Route path="/shared" element={<Shared />} />
+              
             </Route>
           </Routes>
        </AuthProvider>

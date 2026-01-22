@@ -43,7 +43,7 @@ import { FaPython, FaJs, FaJava, FaHtml5, FaCss3Alt } from 'react-icons/fa';
 import { SiTypescript, SiCplusplus, SiC } from 'react-icons/si';
 
 // Main Projects Page Container
-const ProjectsPage = () => {
+const Projects = () => {
   return (
     <Routes>
       <Route path="/" element={<ProjectsList />} />
@@ -709,7 +709,7 @@ const ProjectEditor = () => {
       const data = await response.json();
       if (data.success) {
         setProject(data.data);
-        await fetchProjectFiles();
+        await fetchProjectFiles(projectId);
       }
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -1639,4 +1639,4 @@ const DeleteModal = ({ show, onClose, onConfirm, item, theme, type = 'project' }
   );
 };
 
-export default ProjectsPage;
+export default Projects;
