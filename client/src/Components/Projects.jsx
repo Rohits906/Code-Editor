@@ -201,7 +201,8 @@ const ProjectsList = () => {
         const projectsWithFileCount = await Promise.all(
           data.data.map(async (project) => {
             try {
-              const filesResponse = await fetch(`${API_URL}/projects/project/${project._id}/files`, {
+              const filesResponse = await fetch(`${API_URL}/projects/project/${project._id}/get-files`, {
+                method: 'GET',
                 headers: {
                   'Authorization': `Bearer ${token}`,
                 },
@@ -709,6 +710,49 @@ const ProjectEditor = () => {
   const [editorLanguage, setEditorLanguage] = useState('javascript');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [executionTime, setExecutionTime] = useState(0);
+
+  const [sidebarWidth, setSidebarWidth] = useState(300);
+  const [outputHeight, setOutputHeight] = useState(200);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const [isResizingOutput, setIsResizingOutput] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isResizingSidebar) {
+        const newWidth = e.clientX;
+        if (newWidth > 200 && newWidth < 600) {
+          setSidebarWidth(newWidth);
+        }
+      }
+      
+      if (isResizingOutput) {
+        const newHeight = window.innerHeight - e.clientY;
+        if (newHeight > 100 && newHeight < 500) {
+          setOutputHeight(newHeight);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+      setIsResizingOutput(false);
+    };
+
+    if (isResizingSidebar || isResizingOutput) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = isResizingSidebar ? 'col-resize' : 'row-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizingSidebar, isResizingOutput]);
+
   
   const [fileForm, setFileForm] = useState({
     name: '',
@@ -825,8 +869,9 @@ const ProjectEditor = () => {
     try {
       setLoading(prev => ({ ...prev, files: true }));
       
-      // Fetch real files from API
-      const response = await fetch(`${API_URL}/projects/project/${projectId}/files`, {
+      // Fetch files from API
+      const response = await fetch(`${API_URL}/projects/project/${projectId}/get-files`, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -849,36 +894,43 @@ const ProjectEditor = () => {
       setLoading(prev => ({ ...prev, files: false }));
     }
   };
-  
+
   const handleCreateFile = async () => {
     if (!fileForm.name.trim()) {
       toast.error('Please enter a file name');
       return;
     }
-    
     try {
-      const fileType = fileTypes.find(t => t.id === fileForm.type);
-      const fileName = fileForm.name.endsWith(fileType.extension) 
-        ? fileForm.name 
-        : `${fileForm.name}${fileType.extension}`;
-      
-      const newFile = {
-        _id: Date.now().toString(),
-        name: fileName,
-        type: fileForm.type,
-        content: getDefaultCode(fileForm.type)
-      };
-      
-      setFiles(prev => [...prev, newFile]);
-      setShowFileModal(false);
-      setFileForm({ name: '', type: 'js' });
-      toast.success(`File "${fileName}" created successfully!`);
-      
-      // Select the new file
-      selectFile(newFile);
+      setLoading(prev => ({ ...prev, files: true }));
+      // Create file API call
+      const response = await fetch(`${API_URL}/projects/project/${projectId}/create-file`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: fileForm.name.trim(),
+          type: fileForm.type,
+          content: ''
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create file');
+      }
+      if (data.success) {
+        setFiles(prev => [...prev, data.data]);
+        setShowFileModal(false);
+        setFileForm({ name: '', type: 'js' });
+        toast.success(`File "${data.data.name}" created successfully!`);
+        selectFile(data.data);
+      }
     } catch (error) {
       console.error('Error creating file:', error);
-      toast.error('Failed to create file');
+      toast.error(error.message || 'Failed to create file');
+    } finally {
+      setLoading(prev => ({ ...prev, files: false }));
     }
   };
   
@@ -1286,9 +1338,10 @@ const ProjectEditor = () => {
                   initial={{ x: isMobile ? -300 : 0 }}
                   animate={{ x: 0 }}
                   exit={{ x: isMobile ? -300 : 0 }}
-                  className={`${isMobile ? 'fixed top-0 left-0 bottom-0 w-80 z-40' : 'relative'} files-sidebar ${
+                  className={`${isMobile ? 'fixed top-0 left-0 bottom-0 z-40' : 'relative'} files-sidebar ${
                     theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                   } border-r flex flex-col`}
+                  style={{ width: isMobile ? '80vw' : sidebarWidth }}
                 >
                   <div className="p-4 border-b flex items-center justify-between shrink-0">
                     <div className="flex items-center space-x-3">
@@ -1390,6 +1443,15 @@ const ProjectEditor = () => {
                     )}
                   </div>
                 </motion.div>
+                 {!isMobile && (
+                  <div
+                    className="absolute top-0 right-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500 active:bg-blue-600 transition-colors"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setIsResizingSidebar(true);
+                    }}
+                  />
+                )}
               </>
             )}
           </AnimatePresence>
@@ -1415,7 +1477,8 @@ const ProjectEditor = () => {
             ) : (
               <>
                 {/* Monaco Editor */}
-                <div className="flex-1">
+                <div className="flex-1 overflow-hidden">
+                <div className="h-full overflow-auto">
                   <Editor
                     height="100%"
                     language={editorLanguage}
@@ -1429,7 +1492,7 @@ const ProjectEditor = () => {
                       automaticLayout: true,
                       formatOnPaste: true,
                       formatOnType: true,
-                      scrollBeyondLastLine: false,
+                      scrollBeyondLastLine: true,
                       lineNumbers: isMobile ? 'off' : 'on',
                       glyphMargin: !isMobile,
                       folding: !isMobile,
@@ -1440,24 +1503,36 @@ const ProjectEditor = () => {
                       autoIndent: 'full',
                       renderWhitespace: isMobile ? 'none' : 'boundary',
                       rulers: isMobile ? [] : [80, 120],
+                      scrollbar: {
+                        vertical: 'visible',
+                        horizontal: 'visible'
+                      }
                     }}
                   />
                 </div>
+              </div>
                 
                 {/* Output Panel */}
                 <AnimatePresence>
                   {showOutput && (
                     <motion.div
                       initial={{ height: 0 }}
-                      animate={{ height: isMobile ? '200px' : '300px' }}
+                      animate={{ height: isMobile ? '200px' : outputHeight }}
                       exit={{ height: 0 }}
-                      className={`border-t overflow-hidden output-panel ${
+                      className={`border-t overflow-hidden output-panel relative ${
                         theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                       }`}
                     >
+                    <div
+                      className="absolute top-0 left-0 right-0 h-2 cursor-row-resize hover:bg-blue-500 active:bg-blue-600 transition-colors"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setIsResizingOutput(true);
+                      }}
+                    />
                       <div className={`px-4 py-2 border-b flex items-center justify-between ${
                         theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-                      }`}>
+                      }`} style={{ marginTop: '2px' }}>
                         <div className="flex items-center space-x-2">
                           <Terminal className="w-4 h-4" />
                           <span className="font-medium">Output</span>
