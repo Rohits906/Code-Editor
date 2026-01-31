@@ -8,45 +8,25 @@ import {
   Share2,
   Activity,
   Settings,
-  FileCode,
   User,
   Bell,
   Search,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Users,
   Sun,
   Moon,
   LogOut,
-  Code,
   BarChart3,
   X,
-  Plus,
-  CreditCard,
-  HelpCircle,
-  BookOpen,
-  Terminal,
   Database,
   Smartphone,
   Globe,
   Server,
   Cpu as CpuIcon,
-  GitBranch,
-  Rocket,
-  FileText,
   Menu,
-  Home,
 } from "lucide-react";
-import {
-  FaPython,
-  FaJs,
-  FaJava,
-  FaHtml5,
-  FaCss3Alt,
-  FaReact,
-} from "react-icons/fa";
-import { SiTypescript, SiCplusplus, SiC } from "react-icons/si";
+import { FaPython } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -354,6 +334,7 @@ const Layout = () => {
                 } rounded-t-2xl border-t ${
                   theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
                 }`}
+                style={{ zIndex: 1000 }}
               >
                 <div className="p-4 border-b flex items-center justify-between">
                   <h3 className="font-semibold">Notifications</h3>
@@ -581,7 +562,7 @@ const Layout = () => {
             }`}
           >
             <div className="w-10 h-10 rounded-full from-blue-500 to-purple-600 flex items-center justify-center">
-              <User className="w-6 h-6 text-white" />
+              <User className="w-6 h-6 text-white dark:text-gray-500" />
             </div>
             {!isSidebarCollapsed && (
               <div className="ml-3 flex-1">
@@ -676,7 +657,7 @@ const Layout = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50"
+                        className="fixed inset-0 z-40"
                         onClick={() => setShowNotifications(false)}
                       />
                       <motion.div
@@ -689,6 +670,7 @@ const Layout = () => {
                             ? 'bg-gray-800 border-gray-700'
                             : 'bg-white border-gray-200'
                         }`}
+                        style={{ zIndex: 9999 }}
                       >
                         <div
                           className={`px-4 py-2 border-b ${
@@ -743,7 +725,7 @@ const Layout = () => {
                 </AnimatePresence>
               </div>
 
-              {/* User Profile - FIXED */}
+              {/* User Profile */}
               <div className="relative">
                 <button
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
@@ -754,7 +736,7 @@ const Layout = () => {
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full from-blue-500 to-purple-600 flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
+                    <User className="w-4 h-4 text-white dark:text-gray-500" />
                   </div>
                   <div className="text-left">
                     <div className="text-sm font-medium truncate max-w-[120px]">
@@ -770,7 +752,7 @@ const Layout = () => {
                   </div>
                 </button>
 
-                {/* User Dropdown - FIXED */}
+                {/* User Dropdown */}
                 <AnimatePresence>
                   {showUserDropdown && (
                     <>
@@ -791,6 +773,7 @@ const Layout = () => {
                             ? 'bg-gray-800 border-gray-700'
                             : 'bg-white border-gray-200'
                         }`}
+                        style={{ zIndex: 9999 }}
                       >
                         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                           <div className="font-medium">

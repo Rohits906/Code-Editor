@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import toast, { Toaster } from 'react-hot-toast';
@@ -25,19 +25,14 @@ import {
   Grid,
   List,
   Trash2,
-  Edit,
   Calendar,
   HardDrive,
-  Clock,
   MoreVertical,
   Download,
-  Settings,
   Maximize2,
   Minimize2,
-  ExternalLink,
-  FolderOpen,
   FileCode,
-  Home
+  ExternalLink
 } from 'lucide-react';
 import { FaPython, FaJs, FaJava, FaHtml5, FaCss3Alt } from 'react-icons/fa';
 import { SiTypescript, SiCplusplus, SiC } from 'react-icons/si';
@@ -49,6 +44,50 @@ const Projects = () => {
       <Route path="/" element={<ProjectsList />} />
       <Route path="/:projectId" element={<ProjectEditor />} />
     </Routes>
+  );
+};
+
+const ProjectMenuModal = ({ show, onClose, projectForm, setProjectForm, onSubmit, theme, languages }) => {
+  if (!show) return null;
+  return ( 
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
+      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md p-6`}>
+        <h2 className="text-xl font-semibold mb-4">Create New Project</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block mb-1 font-medium">Project Name</label>
+            <input
+              type="text"
+              value={projectForm.name}
+              onChange={(e) => setProjectForm({...projectForm, name: e.target.value})}
+              className={`w-full p-2 border rounded ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-medium">Description</label>
+            <textarea
+              value={projectForm.description}
+              onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
+              className={`w-full p-2 border rounded ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+            />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button
+              onClick={onClose}
+              className={`px-4 py-2 rounded ${theme === 'dark' ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'}`}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onSubmit}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
+            >
+              Create Project
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -158,7 +197,30 @@ const ProjectsList = () => {
       
       const data = await response.json();
       if (data.success) {
-        setProjects(data.data);
+        // Fetch file count for each project
+        const projectsWithFileCount = await Promise.all(
+          data.data.map(async (project) => {
+            try {
+              const filesResponse = await fetch(`${API_URL}/projects/project/${project._id}/files`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              });
+              
+              if (filesResponse.ok) {
+                const filesData = await filesResponse.json();
+                return {
+                  ...project,
+                  fileCount: filesData.data?.length || 0
+                };
+              }
+            } catch (error) {
+              console.error(`Error fetching files for project ${project._id}:`, error);
+            }
+            return { ...project, fileCount: 0 };
+          })
+        );
+        setProjects(projectsWithFileCount);
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -241,6 +303,10 @@ const ProjectsList = () => {
   const handleProjectClick = (projectId) => {
     navigate(`/projects/${projectId}`);
   };
+
+  const openProjectMenu = (projectId) => {
+    <ProjectMenuModal />
+  };
   
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown';
@@ -280,7 +346,7 @@ const ProjectsList = () => {
         }} 
       />
       
-      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`} style={{ position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <header className={`sticky top-0 z-30 border-b ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="px-4 py-4">
@@ -471,7 +537,7 @@ const ProjectsList = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // Open share modal or context menu
+                                  openProjectMenu(project._id);
                                 }}
                                 className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
@@ -642,6 +708,7 @@ const ProjectEditor = () => {
   const [showOutput, setShowOutput] = useState(true);
   const [editorLanguage, setEditorLanguage] = useState('javascript');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [executionTime, setExecutionTime] = useState(0);
   
   const [fileForm, setFileForm] = useState({
     name: '',
@@ -649,17 +716,30 @@ const ProjectEditor = () => {
   });
   
   const fileTypes = [
-    { id: 'js', name: 'JavaScript', extension: '.js', monacoLang: 'javascript', icon: FaJs, color: 'text-yellow-500' },
-    { id: 'py', name: 'Python', extension: '.py', monacoLang: 'python', icon: FaPython, color: 'text-blue-500' },
-    { id: 'java', name: 'Java', extension: '.java', monacoLang: 'java', icon: FaJava, color: 'text-red-500' },
-    { id: 'html', name: 'HTML', extension: '.html', monacoLang: 'html', icon: FaHtml5, color: 'text-orange-500' },
-    { id: 'css', name: 'CSS', extension: '.css', monacoLang: 'css', icon: FaCss3Alt, color: 'text-blue-600' },
-    { id: 'ts', name: 'TypeScript', extension: '.ts', monacoLang: 'typescript', icon: SiTypescript, color: 'text-blue-400' },
-    { id: 'cpp', name: 'C++', extension: '.cpp', monacoLang: 'cpp', icon: SiCplusplus, color: 'text-pink-500' },
-    { id: 'c', name: 'C', extension: '.c', monacoLang: 'c', icon: SiC, color: 'text-indigo-500' },
-    { id: 'json', name: 'JSON', extension: '.json', monacoLang: 'json', icon: FileText, color: 'text-green-500' },
-    { id: 'txt', name: 'Text', extension: '.txt', monacoLang: 'plaintext', icon: FileText, color: 'text-gray-500' }
+    { id: 'js', name: 'JavaScript', extension: '.js', monacoLang: 'javascript', icon: FaJs, color: 'text-yellow-500', pistonLang: 'javascript' },
+    { id: 'py', name: 'Python', extension: '.py', monacoLang: 'python', icon: FaPython, color: 'text-blue-500', pistonLang: 'python' },
+    { id: 'java', name: 'Java', extension: '.java', monacoLang: 'java', icon: FaJava, color: 'text-red-500', pistonLang: 'java' },
+    { id: 'html', name: 'HTML', extension: '.html', monacoLang: 'html', icon: FaHtml5, color: 'text-orange-500', pistonLang: 'html' },
+    { id: 'css', name: 'CSS', extension: '.css', monacoLang: 'css', icon: FaCss3Alt, color: 'text-blue-600', pistonLang: 'css' },
+    { id: 'ts', name: 'TypeScript', extension: '.ts', monacoLang: 'typescript', icon: SiTypescript, color: 'text-blue-400', pistonLang: 'typescript' },
+    { id: 'cpp', name: 'C++', extension: '.cpp', monacoLang: 'cpp', icon: SiCplusplus, color: 'text-pink-500', pistonLang: 'cpp' },
+    { id: 'c', name: 'C', extension: '.c', monacoLang: 'c', icon: SiC, color: 'text-indigo-500', pistonLang: 'c' },
   ];
+  
+  // Language to Piston API mapping
+  const languageToPiston = {
+    'js': 'javascript',
+    'javascript': 'javascript',
+    'py': 'python',
+    'python': 'python',
+    'java': 'java',
+    'html': 'html',
+    'css': 'css',
+    'ts': 'typescript',
+    'typescript': 'typescript',
+    'cpp': 'cpp',
+    'c': 'c'
+  };
   
   // Check mobile viewport
   useEffect(() => {
@@ -692,6 +772,27 @@ const ProjectEditor = () => {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
   
+  // Add smooth scrolling behavior
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      * {
+        scroll-behavior: smooth;
+      }
+      .output-panel {
+        scroll-behavior: smooth;
+      }
+      .files-sidebar {
+        scroll-behavior: smooth;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+  
   const fetchProjectData = async () => {
     try {
       setLoading(prev => ({ ...prev, project: true }));
@@ -709,7 +810,7 @@ const ProjectEditor = () => {
       const data = await response.json();
       if (data.success) {
         setProject(data.data);
-        await fetchProjectFiles(projectId);
+        await fetchProjectFiles();
       }
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -724,17 +825,22 @@ const ProjectEditor = () => {
     try {
       setLoading(prev => ({ ...prev, files: true }));
       
-      // Mock API call for files
-      const mockFiles = [
-        { _id: '1', name: 'main.js', type: 'js', content: 'console.log("Hello World!");\n\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\ngreet("World");' },
-        { _id: '2', name: 'app.py', type: 'py', content: 'print("Hello World!")\n\ndef greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("World"))' },
-        { _id: '3', name: 'style.css', type: 'css', content: 'body {\n  margin: 0;\n  padding: 0;\n  font-family: Arial, sans-serif;\n}' },
-        { _id: '4', name: 'index.html', type: 'html', content: '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Document</title>\n</head>\n<body>\n    <h1>Hello, World!</h1>\n</body>\n</html>' }
-      ];
+      // Fetch real files from API
+      const response = await fetch(`${API_URL}/projects/project/${projectId}/files`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
       
-      setFiles(mockFiles);
-      if (mockFiles.length > 0) {
-        selectFile(mockFiles[0]);
+      if (!response.ok) throw new Error('Failed to fetch project files');
+      
+      const data = await response.json();
+      if (data.success) {
+        setFiles(data.data || []);
+        if (data.data && data.data.length > 0) {
+          selectFile(data.data[0]);
+        }
       }
     } catch (error) {
       console.error('Error fetching files:', error);
@@ -829,38 +935,113 @@ const ProjectEditor = () => {
     }
     
     try {
+      const startTime = performance.now();
       setLoading(prev => ({ ...prev, execution: true }));
       setOutput('');
       setShowOutput(true);
       
-      // Mock execution
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Determine language for Piston API
+      const fileType = fileTypes.find(t => t.id === currentFile?.type);
+      const language = fileType?.pistonLang || 'javascript';
       
-      const mockOutput = `📁 Project: ${project.name}
-📄 File: ${currentFile?.name || 'Unknown'}
-⏱️  Executing...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Execution successful!
-
-📊 Results:
-> Hello World!
-> Hello, World!
-
-⏰ Time: 0.123s
-💾 Memory: 45.6 MB
-🏁 Process completed successfully!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Ready for next command.`;
-            
-      setOutput(mockOutput);
+      // Prepare code for execution
+      let codeToExecute = code;
+      
+      // Handle different language requirements
+      if (language === 'java') {
+        // Extract class name from Java code
+        const classNameMatch = code.match(/class\s+(\w+)/);
+        const className = classNameMatch ? classNameMatch[1] : 'Main';
+        codeToExecute = code;
+      }
+      
+      // Execute code using Piston API
+      const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          language: language,
+          version: getLanguageVersion(language),
+          files: [
+            {
+              name: currentFile?.name || 'main',
+              content: codeToExecute
+            }
+          ],
+          stdin: '',
+          args: [],
+          compile_timeout: 10000,
+          run_timeout: 5000,
+          compile_memory_limit: -1,
+          run_memory_limit: -1
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to execute code');
+      
+      const result = await response.json();
+      const endTime = performance.now();
+      const executionTimeMs = endTime - startTime;
+      setExecutionTime(executionTimeMs);
+      
+      // Format the output
+      let formattedOutput = '';
+      
+      if (result.compile && result.compile.code !== 0) {
+        // Compilation error
+        formattedOutput = `💥 Compilation Error:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${result.compile.output}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n❌ Compilation failed with code ${result.compile.code}`;
+      } else if (result.run && result.run.code !== 0) {
+        // Runtime error
+        formattedOutput = `💥 Runtime Error:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${result.run.output || 'No output'}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n❌ Execution failed with code ${result.run.code}`;
+      } else if (result.run) {
+        // Successful execution
+        formattedOutput = `✅ Execution Successful!\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${result.run.output || '(No output)'}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n⏰ Time: ${executionTimeMs.toFixed(2)}ms\n📊 Exit Code: ${result.run.code}\n`;
+        
+        if (result.run.signal) {
+          formattedOutput += `🚨 Signal: ${result.run.signal}\n`;
+        }
+        
+        if (result.compile && result.compile.output) {
+          formattedOutput += `🔧 Compilation: ${result.compile.output}\n`;
+        }
+      } else {
+        formattedOutput = '❌ Unknown execution error';
+      }
+      
+      setOutput(formattedOutput);
+      
+      // Scroll to output panel
+      setTimeout(() => {
+        const outputPanel = document.querySelector('.output-panel');
+        if (outputPanel) {
+          outputPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 100);
+      
       toast.success('Code executed successfully!');
     } catch (error) {
       console.error('Error executing code:', error);
-      setOutput(`❌ Execution failed!\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nError: ${error.message}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCheck your code and try again.`);
+      setOutput(`❌ Execution Failed!\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nError: ${error.message}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCheck your code and try again.`);
       toast.error('Failed to execute code');
     } finally {
       setLoading(prev => ({ ...prev, execution: false }));
     }
+  };
+  
+  const getLanguageVersion = (language) => {
+    const versions = {
+      'javascript': '18.15.0',
+      'python': '3.10.0',
+      'java': '15.0.2',
+      'cpp': '10.2.0',
+      'c': '10.2.0',
+      'typescript': '5.0.3',
+      'html': '5.0.0',
+      'css': '3.0.0'
+    };
+    return versions[language] || 'latest';
   };
   
   const getDefaultCode = (type) => {
@@ -872,9 +1053,7 @@ Ready for next command.`;
       css: '/* Welcome to your CSS file! */\nbody {\n    margin: 0;\n    padding: 0;\n    font-family: Arial, sans-serif;\n}',
       ts: '// Welcome to your TypeScript file!\nconsole.log("Hello, World!");\n\n// Start coding here...',
       cpp: '// Welcome to your C++ file!\n#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}',
-      c: '// Welcome to your C file!\n#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
-      json: '{\n  "message": "Welcome to your JSON file!"\n}',
-      txt: 'Welcome to your text file!\n\nStart writing here...'
+      c: '// Welcome to your C file!\n#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}'
     };
     
     return defaults[type] || '// Start coding here...';
@@ -901,6 +1080,26 @@ Ready for next command.`;
     }
   };
   
+  const downloadFile = () => {
+    if (!currentFile) return;
+    
+    try {
+      const blob = new Blob([code], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentFile.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${currentFile.name}`);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error('Failed to download file');
+    }
+  };
+  
   return (
     <>
       <Toaster 
@@ -918,7 +1117,7 @@ Ready for next command.`;
         }} 
       />
       
-      <div className={`h-screen flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} overflow-hidden`}>
+      <div className={`h-screen flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} overflow-hidden`} style={{ position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <header className={`sticky top-0 z-10 border-b ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="px-4 py-3">
@@ -942,7 +1141,7 @@ Ready for next command.`;
                       {loading.project ? 'Loading...' : project?.name || 'Unknown Project'}
                     </h1>
                     <p className={`text-xs truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {project?.description || 'No description'}
+                      {project?.description || 'No description'} • {files.length} files
                     </p>
                   </div>
                 </div>
@@ -1049,18 +1248,18 @@ Ready for next command.`;
                 
                 <div className="flex items-center space-x-2">
                   <button
+                    onClick={downloadFile}
+                    className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title="Download file"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={copyToClipboard}
                     className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Copy code"
                   >
                     <Copy className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setShowOutput(!showOutput)}
-                    className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                    title={showOutput ? "Hide output" : "Show output"}
-                  >
-                    {showOutput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -1087,14 +1286,20 @@ Ready for next command.`;
                   initial={{ x: isMobile ? -300 : 0 }}
                   animate={{ x: 0 }}
                   exit={{ x: isMobile ? -300 : 0 }}
-                  className={`${isMobile ? 'fixed top-0 left-0 bottom-0 w-80 z-50' : 'relative'} ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r flex flex-col`}
+                  className={`${isMobile ? 'fixed top-0 left-0 bottom-0 w-80 z-40' : 'relative'} files-sidebar ${
+                    theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                  } border-r flex flex-col`}
                 >
                   <div className="p-4 border-b flex items-center justify-between shrink-0">
-                    <h3 className="font-semibold">Project Files</h3>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {files.length} files
+                    <div className="flex items-center space-x-3">
+                      <h3 className="font-semibold">Project Files</h3>
+                      <span className={`text-sm px-2 py-1 rounded-full ${
+                        theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {files.length}
                       </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
                       {isMobile && (
                         <button
                           onClick={() => setShowFilesSidebar(false)}
@@ -1150,6 +1355,16 @@ Ready for next command.`;
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     // Download file
+                                    const blob = new Blob([file.content || ''], { type: 'text/plain' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = file.name;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                    toast.success(`Downloaded ${file.name}`);
                                   }}
                                   className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
                                   title="Download"
@@ -1173,16 +1388,6 @@ Ready for next command.`;
                         })}
                       </div>
                     )}
-                  </div>
-                  
-                  <div className="p-4 border-t shrink-0">
-                    <button
-                      onClick={() => setShowFileModal(true)}
-                      className="w-full px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center space-x-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>New File</span>
-                    </button>
                   </div>
                 </motion.div>
               </>
@@ -1246,9 +1451,13 @@ Ready for next command.`;
                       initial={{ height: 0 }}
                       animate={{ height: isMobile ? '200px' : '300px' }}
                       exit={{ height: 0 }}
-                      className={`border-t overflow-hidden ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+                      className={`border-t overflow-hidden output-panel ${
+                        theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                      }`}
                     >
-                      <div className={`px-4 py-2 border-b flex items-center justify-between ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+                      <div className={`px-4 py-2 border-b flex items-center justify-between ${
+                        theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                      }`}>
                         <div className="flex items-center space-x-2">
                           <Terminal className="w-4 h-4" />
                           <span className="font-medium">Output</span>
@@ -1257,6 +1466,13 @@ Ready for next command.`;
                               <RefreshCw className="w-3 h-3 animate-spin" />
                               <span>Executing...</span>
                             </div>
+                          )}
+                          {executionTime > 0 && !loading.execution && (
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {executionTime.toFixed(2)}ms
+                            </span>
                           )}
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1271,7 +1487,7 @@ Ready for next command.`;
                       </div>
                       <div className="h-full overflow-auto p-4 font-mono text-sm whitespace-pre-wrap">
                         {output ? (
-                          <pre className={output.includes('❌') ? 'text-red-500' : 'text-green-500'}>
+                          <pre className={output.includes('❌') || output.includes('💥') ? 'text-red-500' : 'text-green-500'}>
                             {output}
                           </pre>
                         ) : (
@@ -1321,14 +1537,14 @@ const ProjectModal = ({ show, onClose, projectForm, setProjectForm, onSubmit, th
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40"
             onClick={onClose}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-40 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className={`rounded-xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col ${
@@ -1454,14 +1670,14 @@ const FileModal = ({ show, onClose, fileForm, setFileForm, onSubmit, theme, file
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40"
             onClick={onClose}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-40 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className={`rounded-xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col ${
@@ -1572,14 +1788,14 @@ const DeleteModal = ({ show, onClose, onConfirm, item, theme, type = 'project' }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-40"
             onClick={onClose}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-40 flex items-center justify-center p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className={`rounded-xl max-w-md w-full flex flex-col ${
